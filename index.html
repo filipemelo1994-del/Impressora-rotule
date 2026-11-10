@@ -295,6 +295,33 @@ input[type=text]{margin-top:10px}
     </div>
 
     <div class="card">
+      <h2>Papel e idioma da impressora</h2>
+      <label class="field">Idioma
+        <select id="optProto">
+          <option value="tspl">TSPL — etiquetas (igual ao app das fichas)</option>
+          <option value="escpos">ESC/POS — recibo (continuo)</option>
+        </select>
+      </label>
+      <div id="tsplBox">
+        <label class="field">Tamanho da etiqueta do papel
+          <select id="optPaper"></select>
+        </label>
+        <div class="row two" id="paperCustom" hidden>
+          <label class="field">Largura (mm)<input type="text" inputmode="numeric" id="optPW"></label>
+          <label class="field">Altura (mm)<input type="text" inputmode="numeric" id="optPH"></label>
+        </div>
+        <label class="field">Espaço entre etiquetas — gap (mm)
+          <input type="text" inputmode="decimal" id="optGap">
+        </label>
+        <label class="field">Densidade (escuridão) <b id="densOut"></b>
+          <input type="range" id="optDens" min="1" max="15" step="1">
+        </label>
+        <label class="switch"><input type="checkbox" id="optInv"><span>Inverter preto/branco (se sair tudo preto ou apagado)</span></label>
+        <p class="hint">Cada figurinha sai numa etiqueta do papel, centralizada. Se ela for maior que o papel, é reduzida para caber.</p>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Ajustes de impressão</h2>
       <label class="field">Avanço de papel ao final
         <select id="optFeed">
@@ -389,11 +416,13 @@ const PRESETS = {
 };
 const CATS = ['Temperos', 'Mantimentos', 'Despensa', 'Magia', 'Casa', 'Meus'];
 
-const DEFAULTS = { v:2, shape:'pill', style:'solid', orn:'floreio', icon:'none', iconPos:'left', font:'sans', upper:true, bold:true, wmm:46, hmm:18, feed:3, ff:false, chunk:20, delay:10 };
+const PAPERS = [[40, 20], [40, 30], [50, 30], [50, 40], [58, 40]];   // mesmos tamanhos do app das fichas
+const DEFAULTS = { v:3, shape:'pill', style:'solid', orn:'floreio', icon:'none', iconPos:'left', font:'sans', upper:true, bold:true, wmm:36, hmm:16, feed:3, ff:false, chunk:20, delay:12,
+  proto:'tspl', pw:40, ph:30, gap:2, dens:8, inv:false };
 const savedSettings = store.get('rotule.settings', {});
 let S = Object.assign({}, DEFAULTS, savedSettings);
-// v2: pacotes de 20 bytes (limite seguro do BLE no Android) — migra quem tinha o padrão antigo de 100
-if (!savedSettings.v || savedSettings.v < 2) { S.v = 2; S.chunk = 20; S.delay = 10; store.set('rotule.settings', S); }
+// v2: pacotes de 20 bytes (limite seguro do BLE no Android); v3: protocolo TSPL (o que a POS-5820 entende)
+if (!savedSettings.v || savedSettings.v < 3) { S.v = 3; S.chunk = 20; S.delay = 12; S.proto = 'tspl'; store.set('rotule.settings', S); }
 let queue = store.get('rotule.queue', []);
 let mine  = store.get('rotule.mine', []);
 let category = 'Temperos';
@@ -931,6 +960,42 @@ function canvasToEscpos(cv) {
   return out;
 }
 
+/* -------------------------------------------------------------------- TSPL */
+// Idioma das impressoras de etiqueta (203 dpi). Cada figurinha vira uma "página" do tamanho do papel,
+// centralizada e reduzida só se não couber. Em TSPL o bit 0 = ponto preto.
+function tsplJob(items) {
+  const Wp = Math.round(S.pw * DPMM), Hp = Math.round(S.ph * DPMM), wb = Math.ceil(Wp / 8);
+  const enc = new TextEncoder(), { w, h } = dims();
+  const parts = [enc.encode(`SIZE ${S.pw} mm,${S.ph} mm\r\nGAP ${S.gap} mm,0 mm\r\nDIRECTION 1\r\nDENSITY ${S.dens}\r\n`)];
+  const flat = []; items.forEach(it => { for (let i = 0; i < it.qty; i++) flat.push(it); });
+  flat.forEach(it => {
+    const lab = document.createElement('canvas'); lab.width = w; lab.height = h;
+    const lc = lab.getContext('2d'); lc.fillStyle = '#fff'; lc.fillRect(0, 0, w, h);
+    drawLabel(lc, 0, 0, w, h, it, it.look || lookOf(S));
+    const pg = document.createElement('canvas'); pg.width = Wp; pg.height = Hp;
+    const pc = pg.getContext('2d'); pc.fillStyle = '#fff'; pc.fillRect(0, 0, Wp, Hp);
+    const sc = Math.min(1, (Wp - 8) / w, (Hp - 8) / h), dw = w * sc, dh = h * sc;
+    pc.imageSmoothingQuality = 'high'; pc.drawImage(lab, (Wp - dw) / 2, (Hp - dh) / 2, dw, dh);
+    const px = pc.getImageData(0, 0, Wp, Hp).data, bmp = new Uint8Array(wb * Hp);
+    for (let y = 0; y < Hp; y++) for (let x = 0; x < Wp; x++) {
+      const black = px[(y * Wp + x) * 4] < 150;
+      const bit = S.inv ? (black ? 1 : 0) : (black ? 0 : 1);
+      if (bit) bmp[y * wb + (x >> 3)] |= 0x80 >> (x & 7);
+    }
+    parts.push(enc.encode(`CLS\r\nBITMAP 0,0,${wb},${Hp},0,`), bmp, enc.encode('\r\nPRINT 1,1\r\n'));
+  });
+  const total = parts.reduce((a, b) => a + b.length, 0), out = new Uint8Array(total);
+  let o = 0; parts.forEach(b => { out.set(b, o); o += b.length; });
+  return out;
+}
+function tsplTextTest() {
+  return new TextEncoder().encode(`SIZE ${S.pw} mm,${S.ph} mm\r\nGAP ${S.gap} mm,0 mm\r\nDIRECTION 1\r\nDENSITY ${S.dens}\r\nCLS\r\nTEXT 24,24,"3",0,1,1,"ROTULE - TESTE"\r\nTEXT 24,70,"3",0,1,1,"1234567890"\r\nPRINT 1,1\r\n`);
+}
+function buildJob(items) {
+  if (S.proto === 'escpos') return canvasToEscpos(buildSheet(items).canvas);
+  return tsplJob(items);
+}
+
 /* --------------------------------------------------------------- Bluetooth */
 const BT_SERVICES = [0xFFE0, 0xFF00, 0xFFF0, 0xFEE7, 0xAE30, 0xAF30, 0x18F0, 0xFFB0, 0x1101,
   'e7810a71-73ae-499d-8c15-faa9aef0c3f2', '49535343-fe7d-4ae5-8fa9-9fafd205e455', '0000ff00-0000-1000-8000-00805f9b34fb'];
@@ -1047,8 +1112,24 @@ function syncControls() {
   $('#wOut').textContent = S.wmm + ' mm'; $('#hOut').textContent = S.hmm + ' mm';
   const cols = Math.max(1, Math.floor((PAPER + GAP_X) / (Math.min(PAPER, S.wmm * DPMM) + GAP_X)));
   $('#fitHint').textContent = `${cols} etiqueta${cols > 1 ? 's' : ''} por linha no papel de 58 mm (área útil 48 mm).`;
+  syncPrinterUi();
   $('#optFeed').value = S.feed; $('#optFF').checked = S.ff; $('#optChunk').value = S.chunk;
   $('#optDelay').value = S.delay; $('#delayOut').textContent = S.delay + ' ms';
+}
+
+function syncPrinterUi() {
+  $('#optProto').value = S.proto;
+  $('#tsplBox').hidden = S.proto !== 'tspl';
+  const sel = $('#optPaper');
+  if (!sel.options.length) {
+    PAPERS.forEach(([w, h]) => { const o = document.createElement('option'); o.value = `${w}x${h}`; o.textContent = `${w} × ${h} mm`; sel.append(o); });
+    const o = document.createElement('option'); o.value = 'custom'; o.textContent = 'Outro tamanho…'; sel.append(o);
+  }
+  const known = PAPERS.some(([w, h]) => w === S.pw && h === S.ph);
+  sel.value = known ? `${S.pw}x${S.ph}` : 'custom';
+  $('#paperCustom').hidden = known;
+  $('#optPW').value = S.pw; $('#optPH').value = S.ph; $('#optGap').value = S.gap;
+  $('#optDens').value = S.dens; $('#densOut').textContent = S.dens; $('#optInv').checked = S.inv;
 }
 
 function buildShapeButtons() {
@@ -1136,7 +1217,9 @@ function renderQueue() {
     const { canvas, count, cols, rows } = buildSheet(queue);
     sheet.width = canvas.width; sheet.height = canvas.height; sheet.getContext('2d').drawImage(canvas, 0, 0);
     const cm = (canvas.height / DPMM / 10).toFixed(1);
-    $('#sheetInfo').textContent = `${count} etiqueta${count > 1 ? 's' : ''} · ${cols} por linha · ${rows} linha${rows > 1 ? 's' : ''} · ≈ ${cm} cm de papel`;
+    $('#sheetInfo').textContent = S.proto === 'tspl'
+      ? `${count} etiqueta${count > 1 ? 's' : ''} · uma em cada etiqueta do papel (${S.pw}×${S.ph} mm). Prévia abaixo.`
+      : `${count} etiqueta${count > 1 ? 's' : ''} · ${cols} por linha · ${rows} linha${rows > 1 ? 's' : ''} · ≈ ${cm} cm de papel`;
   }
   ['#btnPrint', '#btnPng', '#btnShare', '#btnClearQueue'].forEach(s => $(s).disabled = !has);
 }
@@ -1150,8 +1233,7 @@ async function doPrint(items, label) {
   try {
     setStatus('Conectando à impressora…');
     await btEnsure();
-    const { canvas } = buildSheet(items);
-    const data = canvasToEscpos(canvas);
+    const data = buildJob(items);
     setStatus(`Enviando ${label}…`); setProgress(0);
     await btSend(data, setProgress);
     setProgress(1); setStatus('Enviado à impressora. Se nada saiu, vá em Ajustes e faça o “Teste de texto”.', 'ok');
@@ -1245,13 +1327,27 @@ function bind() {
     catch (e) { if (e && e.name !== 'NotFoundError') toast(e.message || 'Não foi possível conectar'); }
   });
   $('#btnDisconnect').addEventListener('click', () => { try { BT.device && BT.device.gatt.disconnect(); } catch {} BT.char = null; setBtUi('off'); });
+  $('#optProto').addEventListener('change', e => { S.proto = e.target.value; saveSettings(); syncPrinterUi(); });
+  $('#optPaper').addEventListener('change', e => {
+    if (e.target.value !== 'custom') { const [w, h] = e.target.value.split('x').map(Number); S.pw = w; S.ph = h; }
+    saveSettings(); syncPrinterUi(); if (e.target.value === 'custom') $('#paperCustom').hidden = false;
+  });
+  const num = (el, min, max, d) => Math.min(max, Math.max(min, parseFloat(String(el.value).replace(',', '.')) || d));
+  $('#optPW').addEventListener('change', () => { S.pw = Math.round(num($('#optPW'), 15, 58, 40)); saveSettings(); syncPrinterUi(); $('#paperCustom').hidden = false; });
+  $('#optPH').addEventListener('change', () => { S.ph = Math.round(num($('#optPH'), 10, 200, 30)); saveSettings(); syncPrinterUi(); $('#paperCustom').hidden = false; });
+  $('#optGap').addEventListener('change', () => { S.gap = num($('#optGap'), 0, 10, 2); saveSettings(); syncPrinterUi(); });
+  $('#optDens').addEventListener('input', e => { S.dens = +e.target.value; $('#densOut').textContent = S.dens; saveSettings(); });
+  $('#optInv').addEventListener('change', e => { S.inv = e.target.checked; saveSettings(); });
   $('#optChar').addEventListener('change', e => { const f = BT.chars[+e.target.value]; if (f) { BT.char = f.c; toast('Canal trocado'); } });
   $('#btnTextTest').addEventListener('click', async () => {
     const b = $('#btnTextTest'); b.disabled = true;
     try {
       await btEnsure();
-      const txt = new TextEncoder().encode('ROTULE - TESTE DE TEXTO\n1234567890 ABCDEFGHIJ\n\n\n\n');
-      const bytes = new Uint8Array(2 + txt.length); bytes.set([0x1B, 0x40]); bytes.set(txt, 2);
+      let bytes;
+      if (S.proto === 'escpos') {
+        const txt = new TextEncoder().encode('ROTULE - TESTE DE TEXTO\n1234567890 ABCDEFGHIJ\n\n\n\n');
+        bytes = new Uint8Array(2 + txt.length); bytes.set([0x1B, 0x40]); bytes.set(txt, 2);
+      } else bytes = tsplTextTest();
       await btSend(bytes); toast('Enviado — saiu texto no papel?');
     } catch (e) { if (!e || e.name !== 'NotFoundError') toast((e && e.message) || 'Falhou o teste'); }
     finally { b.disabled = false; }
