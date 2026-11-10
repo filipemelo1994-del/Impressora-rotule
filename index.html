@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Rotulê</title>
+<meta name="description" content="Etiquetas adesivas para temperos e mantimentos, impressas por Bluetooth em impressora térmica 58 mm.">
+<meta name="theme-color" content="#1b1f2a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="top">
+  <img src="icons/logo.svg" alt="" class="logo" width="40" height="40">
+  <div class="brand">
+    <h1>Rotulê</h1>
+    <p>Etiquetas adesivas para a despensa</p>
+  </div>
+  <button id="btChip" class="chip-bt" type="button" aria-live="polite">
+    <span class="dot" id="btDot"></span><span id="btLabel">Conectar</span>
+  </button>
+</header>
+
+<div id="compat" class="banner" hidden></div>
+
+<main>
+
+  <!-- ============ CRIAR ============ -->
+  <section id="tab-criar" class="tab active">
+
+    <div class="card">
+      <h2>Formato</h2>
+      <button id="btnMagic" class="btn magic" type="button">✨ Aplicar tema mágico (nuvem, varinha, letra de bruxo)</button>
+
+      <label class="lbl">Forma</label>
+      <div class="shapes" id="shapes" role="radiogroup" aria-label="Forma da etiqueta"></div>
+
+      <label class="lbl">Estilo</label>
+      <div class="seg" id="styleSeg" role="radiogroup" aria-label="Estilo">
+        <button type="button" data-v="solid">Sólido</button>
+        <button type="button" data-v="outline">Contorno</button>
+        <button type="button" data-v="double">Duplo</button>
+        <button type="button" data-v="dashed">Recorte</button>
+      </div>
+
+      <label class="lbl">Enfeite</label>
+      <div class="pills" id="ornPills" role="radiogroup" aria-label="Enfeite">
+        <button type="button" data-v="none">Nenhum</button>
+        <button type="button" data-v="floreio">Floreio</button>
+        <button type="button" data-v="folhas">Folhas</button>
+        <button type="button" data-v="estrelas">Estrelas</button>
+        <button type="button" data-v="pontos">Pontos</button>
+        <button type="button" data-v="linha">Linha</button>
+        <button type="button" data-v="nuvens">Nuvens</button>
+        <button type="button" data-v="faiscas">Faíscas</button>
+      </div>
+
+      <label class="lbl">Desenho pequeno</label>
+      <div class="shapes icons" id="iconRow" role="radiogroup" aria-label="Desenho pequeno"></div>
+      <div class="seg" id="iconPosSeg" role="radiogroup" aria-label="Posição do desenho">
+        <button type="button" data-v="left">Só à esquerda</button>
+        <button type="button" data-v="both">Nos dois lados</button>
+      </div>
+
+      <label class="lbl">Letra</label>
+      <div class="seg" id="fontSeg" role="radiogroup" aria-label="Fonte">
+        <button type="button" data-v="sans">Simples</button>
+        <button type="button" data-v="serif">Clássica</button>
+        <button type="button" data-v="mono">Técnica</button>
+        <button type="button" data-v="script">Cursiva</button>
+        <button type="button" data-v="magic" class="f-magic">Bruxo</button>
+        <button type="button" data-v="medieval" class="f-medieval">Medieval</button>
+      </div>
+
+      <div class="row two">
+        <label class="switch"><input type="checkbox" id="optUpper"><span>MAIÚSCULAS</span></label>
+        <label class="switch"><input type="checkbox" id="optBold"><span>Negrito</span></label>
+      </div>
+
+      <div class="sliders">
+        <label>Largura <b id="wOut"></b>
+          <input type="range" id="wmm" min="14" max="48" step="1">
+        </label>
+        <label>Altura <b id="hOut"></b>
+          <input type="range" id="hmm" min="8" max="40" step="1">
+        </label>
+      </div>
+      <p class="hint" id="fitHint"></p>
+    </div>
+
+    <div class="card">
+      <h2>Seu texto</h2>
+      <div class="preview-wrap"><canvas id="livePreview" aria-label="Prévia da etiqueta"></canvas></div>
+      <input id="txtMain" type="text" placeholder="Ex.: Pimenta-do-reino" maxlength="40" autocomplete="off">
+      <input id="txtSub" type="text" placeholder="Linha pequena (opcional) — ex.: Val. 10/2027" maxlength="30" autocomplete="off">
+      <div class="row two">
+        <button id="btnAddCustom" class="btn primary" type="button">Adicionar à fila</button>
+        <button id="btnSaveMine" class="btn" type="button">Salvar em “Meus”</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Modelos prontos</h2>
+      <p class="hint">Toque nas etiquetas para selecionar várias de uma vez.</p>
+      <div class="pills scroll" id="catPills" role="tablist"></div>
+      <div class="grid" id="presetGrid"></div>
+    </div>
+
+    <div class="selbar" id="selBar" hidden>
+      <span><b id="selCount">0</b> selecionadas</span>
+      <div class="qty">
+        <button type="button" id="selMinus" aria-label="Menos">−</button>
+        <span>×<b id="selQty">1</b></span>
+        <button type="button" id="selPlus" aria-label="Mais">+</button>
+      </div>
+      <button type="button" class="btn" id="selClear">Limpar</button>
+      <button type="button" class="btn primary" id="selAdd">Adicionar</button>
+    </div>
+  </section>
+
+  <!-- ============ FILA ============ -->
+  <section id="tab-fila" class="tab">
+    <div class="card">
+      <h2>Folha de impressão</h2>
+      <p class="hint" id="sheetInfo">Fila vazia.</p>
+      <div class="sheet-wrap"><canvas id="sheetCanvas" aria-label="Folha que será impressa"></canvas></div>
+
+      <div class="progress" id="progress" hidden><div id="progressBar"></div></div>
+      <p class="status" id="printStatus" role="status"></p>
+
+      <button id="btnPrint" class="btn primary big" type="button">🖨️ Imprimir fila</button>
+      <div class="row three">
+        <button id="btnTest" class="btn" type="button">Teste</button>
+        <button id="btnPng" class="btn" type="button">Baixar PNG</button>
+        <button id="btnShare" class="btn" type="button">Compartilhar</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h2>Itens</h2>
+        <button id="btnClearQueue" class="btn small danger" type="button">Esvaziar</button>
+      </div>
+      <ul class="queue" id="queueList"></ul>
+      <p class="empty" id="queueEmpty">Nada por aqui ainda. Volte em <b>Criar</b> e escolha as etiquetas.</p>
+    </div>
+  </section>
+
+  <!-- ============ AJUSTES ============ -->
+  <section id="tab-ajustes" class="tab">
+    <div class="card">
+      <h2>Impressora Bluetooth</h2>
+      <p class="hint" id="btDetail">Nenhuma impressora conectada.</p>
+      <div class="row two">
+        <button id="btnConnect" class="btn primary" type="button">Conectar</button>
+        <button id="btnDisconnect" class="btn" type="button">Desconectar</button>
+      </div>
+      <p class="hint">Ligue a impressora, ative o Bluetooth do celular e toque em Conectar. Escolha o nome que aparece (algo como <i>POS-5820</i>, <i>BT Printer</i> ou <i>MPT</i>). Se o navegador pedir permissão de “dispositivos próximos”, aceite.</p>
+    </div>
+
+    <div class="card">
+      <h2>Ajustes de impressão</h2>
+      <label class="field">Avanço de papel ao final
+        <select id="optFeed">
+          <option value="0">Nenhum</option><option value="2">2 linhas</option><option value="3">3 linhas</option>
+          <option value="4">4 linhas</option><option value="6">6 linhas</option><option value="8">8 linhas</option><option value="12">12 linhas</option>
+        </select>
+      </label>
+      <label class="switch"><input type="checkbox" id="optFF"><span>Enviar “form feed” (alinha papel com gap de etiqueta)</span></label>
+      <label class="field">Tamanho do pacote Bluetooth
+        <select id="optChunk">
+          <option value="20">20 bytes (mais lento, mais compatível)</option>
+          <option value="100">100 bytes (padrão)</option>
+          <option value="180">180 bytes</option>
+          <option value="500">500 bytes (rápido)</option>
+        </select>
+      </label>
+      <label class="field">Pausa entre pacotes <b id="delayOut"></b>
+        <input type="range" id="optDelay" min="0" max="80" step="5">
+      </label>
+      <p class="hint">Se a impressão sair cortada, com lixo ou parar no meio: reduza o pacote e aumente a pausa.</p>
+    </div>
+
+    <div class="card">
+      <h2>Aplicativo</h2>
+      <button id="btnInstall" class="btn primary" type="button" hidden>Instalar na tela inicial</button>
+      <p class="hint">No Chrome do Android: menu ⋮ → <i>Instalar app</i> / <i>Adicionar à tela inicial</i>. Depois de aberto uma vez, funciona offline (só a impressão precisa do Bluetooth).</p>
+      <button id="btnResetAll" class="btn danger small" type="button">Apagar fila, textos e ajustes</button>
+    </div>
+  </section>
+
+</main>
+
+<nav class="tabbar" aria-label="Seções">
+  <button type="button" data-tab="criar" class="active"><span class="ico">✎</span>Criar</button>
+  <button type="button" data-tab="fila"><span class="ico">▤</span>Fila<i id="queueBadge" hidden>0</i></button>
+  <button type="button" data-tab="ajustes"><span class="ico">⚙</span>Ajustes</button>
+</nav>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
