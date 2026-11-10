@@ -1,9 +1,5 @@
-const CACHE = 'rotule-v2';
-const ASSETS = [
-  './fonts/cinzel-decorative-latin-400-normal.woff2', './fonts/cinzel-decorative-latin-700-normal.woff2', './fonts/medievalsharp-latin-400-normal.woff2',
-  './', './index.html', './style.css', './app.js', './manifest.webmanifest',
-  './icons/logo.svg', './icons/icon-192.png', './icons/icon-512.png', './icons/apple-touch-icon.png'
-];
+const CACHE = 'rotule-v3';
+const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
