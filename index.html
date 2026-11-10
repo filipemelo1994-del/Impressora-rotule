@@ -287,6 +287,10 @@ input[type=text]{margin-top:10px}
         <button id="btnConnect" class="btn primary" type="button">Conectar</button>
         <button id="btnDisconnect" class="btn" type="button">Desconectar</button>
       </div>
+      <label class="field" id="charField" hidden>Canal de escrita (se não imprimir, tente outro)
+        <select id="optChar"></select>
+      </label>
+      <button id="btnTextTest" class="btn" type="button" style="width:100%;margin-top:12px">Teste de texto (diagnóstico)</button>
       <p class="hint">Ligue a impressora, ative o Bluetooth do celular e toque em Conectar. Escolha o nome que aparece (algo como <i>POS-5820</i>, <i>BT Printer</i> ou <i>MPT</i>). Se o navegador pedir permissão de “dispositivos próximos”, aceite.</p>
     </div>
 
@@ -301,10 +305,10 @@ input[type=text]{margin-top:10px}
       <label class="switch"><input type="checkbox" id="optFF"><span>Enviar “form feed” (alinha papel com gap de etiqueta)</span></label>
       <label class="field">Tamanho do pacote Bluetooth
         <select id="optChunk">
-          <option value="20">20 bytes (mais lento, mais compatível)</option>
-          <option value="100">100 bytes (padrão)</option>
+          <option value="20">20 bytes (seguro — recomendado)</option>
+          <option value="100">100 bytes (só se a impressora aceitar)</option>
           <option value="180">180 bytes</option>
-          <option value="500">500 bytes (rápido)</option>
+          <option value="500">500 bytes</option>
         </select>
       </label>
       <label class="field">Pausa entre pacotes <b id="delayOut"></b>
@@ -385,8 +389,11 @@ const PRESETS = {
 };
 const CATS = ['Temperos', 'Mantimentos', 'Despensa', 'Magia', 'Casa', 'Meus'];
 
-const DEFAULTS = { shape:'pill', style:'solid', orn:'floreio', icon:'none', iconPos:'left', font:'sans', upper:true, bold:true, wmm:46, hmm:18, feed:3, ff:false, chunk:100, delay:15 };
-let S = Object.assign({}, DEFAULTS, store.get('rotule.settings', {}));
+const DEFAULTS = { v:2, shape:'pill', style:'solid', orn:'floreio', icon:'none', iconPos:'left', font:'sans', upper:true, bold:true, wmm:46, hmm:18, feed:3, ff:false, chunk:20, delay:10 };
+const savedSettings = store.get('rotule.settings', {});
+let S = Object.assign({}, DEFAULTS, savedSettings);
+// v2: pacotes de 20 bytes (limite seguro do BLE no Android) — migra quem tinha o padrão antigo de 100
+if (!savedSettings.v || savedSettings.v < 2) { S.v = 2; S.chunk = 20; S.delay = 10; store.set('rotule.settings', S); }
 let queue = store.get('rotule.queue', []);
 let mine  = store.get('rotule.mine', []);
 let category = 'Temperos';
@@ -927,7 +934,9 @@ function canvasToEscpos(cv) {
 /* --------------------------------------------------------------- Bluetooth */
 const BT_SERVICES = [0xFFE0, 0xFF00, 0xFFF0, 0xFEE7, 0xAE30, 0xAF30, 0x18F0, 0xFFB0, 0x1101,
   'e7810a71-73ae-499d-8c15-faa9aef0c3f2', '49535343-fe7d-4ae5-8fa9-9fafd205e455', '0000ff00-0000-1000-8000-00805f9b34fb'];
-const BT = { device: null, char: null, name: '' };
+const BT = { device: null, char: null, chars: [], name: '' };
+const KNOWN_CHARS = ['ff02', 'ffe1', '2af1', 'ae01', 'ff01', 'fff2', 'fff1', 'bef8d6c9'];
+const shortId = u => /^0000[0-9a-f]{4}-0000-1000-8000-00805f9b34fb$/.test(u) ? u.slice(4, 8) : u.slice(0, 8);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 function setBtUi(state, detail) {
@@ -945,18 +954,23 @@ async function attach(device) {
   device.addEventListener('gattserverdisconnected', onDisconnected);
   const server = await device.gatt.connect();
   const services = await server.getPrimaryServices();
-  let withoutResp = null, withResp = null;
+  const found = [];
   for (const sv of services) {
     if (/^0000180[01]-/.test(sv.uuid)) continue;
     let chars = [];
     try { chars = await sv.getCharacteristics(); } catch { continue; }
     for (const c of chars) {
-      if (c.properties.writeWithoutResponse && !withoutResp) withoutResp = c;
-      else if (c.properties.write && !withResp) withResp = c;
+      if (!(c.properties.writeWithoutResponse || c.properties.write)) continue;
+      const k = KNOWN_CHARS.indexOf(shortId(c.uuid));
+      found.push({ c, score: (k >= 0 ? 20 - k : 0) + (c.properties.writeWithoutResponse ? 1 : 0), label: `${shortId(sv.uuid)} / ${shortId(c.uuid)}${c.properties.writeWithoutResponse ? '' : ' (com resposta)'}` });
     }
   }
-  BT.char = withoutResp || withResp;
+  found.sort((a, b) => b.score - a.score);
+  BT.chars = found; BT.char = found.length ? found[0].c : null;
   if (!BT.char) { try { device.gatt.disconnect(); } catch {} throw new Error('Não achei um canal de escrita nessa impressora. Ela pode ser só Bluetooth clássico (sem BLE).'); }
+  const sel = $('#optChar'); sel.innerHTML = '';
+  found.forEach((f, i) => { const o = document.createElement('option'); o.value = i; o.textContent = f.label; sel.append(o); });
+  $('#charField').hidden = found.length < 2;
   setBtUi('on');
 }
 
@@ -1140,7 +1154,7 @@ async function doPrint(items, label) {
     const data = canvasToEscpos(canvas);
     setStatus(`Enviando ${label}…`); setProgress(0);
     await btSend(data, setProgress);
-    setProgress(1); setStatus('Pronto! Destaque as etiquetas. ✔', 'ok');
+    setProgress(1); setStatus('Enviado à impressora. Se nada saiu, vá em Ajustes e faça o “Teste de texto”.', 'ok');
     setTimeout(() => setProgress(null), 1200);
   } catch (e) {
     if (e && e.name === 'NotFoundError') setStatus('Nenhuma impressora escolhida.', 'err');
@@ -1231,6 +1245,17 @@ function bind() {
     catch (e) { if (e && e.name !== 'NotFoundError') toast(e.message || 'Não foi possível conectar'); }
   });
   $('#btnDisconnect').addEventListener('click', () => { try { BT.device && BT.device.gatt.disconnect(); } catch {} BT.char = null; setBtUi('off'); });
+  $('#optChar').addEventListener('change', e => { const f = BT.chars[+e.target.value]; if (f) { BT.char = f.c; toast('Canal trocado'); } });
+  $('#btnTextTest').addEventListener('click', async () => {
+    const b = $('#btnTextTest'); b.disabled = true;
+    try {
+      await btEnsure();
+      const txt = new TextEncoder().encode('ROTULE - TESTE DE TEXTO\n1234567890 ABCDEFGHIJ\n\n\n\n');
+      const bytes = new Uint8Array(2 + txt.length); bytes.set([0x1B, 0x40]); bytes.set(txt, 2);
+      await btSend(bytes); toast('Enviado — saiu texto no papel?');
+    } catch (e) { if (!e || e.name !== 'NotFoundError') toast((e && e.message) || 'Falhou o teste'); }
+    finally { b.disabled = false; }
+  });
   $('#optFeed').addEventListener('change', e => { S.feed = +e.target.value; saveSettings(); });
   $('#optFF').addEventListener('change', e => { S.ff = e.target.checked; saveSettings(); });
   $('#optChunk').addEventListener('change', e => { S.chunk = +e.target.value; saveSettings(); });
