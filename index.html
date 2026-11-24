@@ -2326,26 +2326,32 @@ async function jget(url) { const r = await fetch(url); if (!r.ok) throw new Erro
 const enc = encodeURIComponent;
 const stripTags = h => (h || '').replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 
-async function searchIcons(q, limit, prefixes) {
-  const data = await jget(`${API.iconify}/search?query=${enc(toEnglish(q))}&limit=${Math.max(32, limit)}${prefixes ? '&prefixes=' + prefixes : ''}`);
-  return (data.icons || []).slice(0, limit).map(full => {
+const uniq = list => { const seen = new Set(); return list.filter(r => !seen.has(r.key) && seen.add(r.key)); };
+const variants = q => { const en = toEnglish(q), o = stripAcc(q).trim(); return en === o ? [en] : [en, o]; };   // inglês e português
+async function searchIcons(q, page, prefixes) {
+  const PER = 64, lists = await Promise.allSettled(variants(q).map(v =>
+    jget(`${API.iconify}/search?query=${enc(v)}&limit=${PER}&start=${page * PER}${prefixes ? '&prefixes=' + prefixes : ''}`)));
+  const icons = lists.filter(l => l.status === 'fulfilled').flatMap(l => l.value.icons || []);
+  if (!icons.length && lists.every(l => l.status === 'rejected')) throw lists[0].reason;
+  return uniq([...new Set(icons)].map(full => {
     const [prefix, name] = full.split(':');
     return { key: 'if:' + full, kind: prefixes ? 'desenho' : 'icone', title: name.replace(/-/g, ' '), thumb: `${API.iconify}/${prefix}/${name}.svg?height=96`,
       full: `${API.iconify}/${prefix}/${name}.svg?height=512`, mime: 'image/svg+xml', source: `Iconify · ${prefix}`, credit: `Conjunto “${prefix}” (confira a licença do conjunto)`, link: `https://icon-sets.iconify.design/${prefix}/${name}/` };
-  });
+  }));
 }
-async function searchOpenverse(q, limit, category) {
-  const data = await jget(`${API.openverse}/images/?q=${enc(toEnglish(q))}&page_size=${Math.min(limit, 20)}&category=${category}&mature=false`);
+async function searchOpenverse(q, page, category) {
+  const data = await jget(`${API.openverse}/images/?q=${enc(toEnglish(q))}&page_size=20&page=${page + 1}&category=${category}&mature=false`);
   return (data.results || []).map(r => ({
     key: 'ov:' + r.id, kind: category === 'illustration' ? 'desenho' : 'foto', title: r.title || q, thumb: r.thumbnail || `${API.openverse}/images/${r.id}/thumb/`,
     full: `${API.openverse}/images/${r.id}/thumb/`, mime: 'image/jpeg', source: 'Openverse', credit: `${r.creator || 'autor desconhecido'} · ${(r.license || '').toUpperCase()} ${r.license_version || ''}`.trim(), link: r.foreign_landing_url || r.url,
   }));
 }
-async function searchCommons(q, limit) {
-  const data = await jget(`${API.commons}?action=query&generator=search&gsrnamespace=6&gsrsearch=${enc(q)}&gsrlimit=${Math.min(limit, 30)}&prop=imageinfo&iiprop=url|extmetadata|mime&iiurlwidth=600&format=json&origin=*`);
+async function searchCommons(q, page, kind) {   // kind: 'foto' | 'desenho' (desenhos = vetores/SVG)
+  const term = kind === 'desenho' ? toEnglish(q) + ' filetype:drawing' : toEnglish(q) + ' filetype:bitmap', PER = 30;
+  const data = await jget(`${API.commons}?action=query&generator=search&gsrnamespace=6&gsrsearch=${enc(term)}&gsrlimit=${PER}&gsroffset=${page * PER}&prop=imageinfo&iiprop=url|extmetadata|mime&iiurlwidth=600&format=json&origin=*`);
   return Object.values((data.query && data.query.pages) || {}).filter(p => p.imageinfo && /^image\/(jpeg|png|svg|webp)/.test(p.imageinfo[0].mime || '')).map(p => {
     const ii = p.imageinfo[0], m = ii.extmetadata || {};
-    return { key: 'cm:' + p.pageid, kind: 'foto', title: p.title.replace(/^File:/, '').replace(/\.[a-z]+$/i, ''), thumb: ii.thumburl || ii.url, full: ii.thumburl || ii.url, mime: ii.mime,
+    return { key: 'cm:' + p.pageid, kind, title: p.title.replace(/^File:/, '').replace(/\.[a-z]+$/i, ''), thumb: ii.thumburl || ii.url, full: ii.thumburl || ii.url, mime: ii.mime,
       source: 'Wikimedia Commons', credit: `${stripTags(m.Artist && m.Artist.value) || 'autor desconhecido'} · ${stripTags(m.LicenseShortName && m.LicenseShortName.value)}`, link: ii.descriptionshorturl };
   });
 }
@@ -2357,24 +2363,26 @@ async function fontList() {
   const list = raw.filter(f => (f.subsets || []).includes('latin')).map(f => ({ id: f.id, family: f.family, weights: f.weights, styles: f.styles, category: f.category, license: f.license }));
   metaSet('fontlist', { t: Date.now(), list }); return (G.fontList = list);
 }
-async function searchFonts(q, limit) {
-  const n = stripAcc(q).replace(/\s+/g, ''), list = await fontList();
-  const hit = list.filter(f => stripAcc(f.family).replace(/\s+/g, '').includes(n) || f.id.replace(/-/g, '').includes(n));
-  return hit.slice(0, limit).map(f => {
+const FONT_CATS = { cursiva: 'handwriting', manuscrita: 'handwriting', script: 'handwriting', handwriting: 'handwriting', fofa: 'handwriting', serifa: 'serif', serif: 'serif', 'sem serifa': 'sans-serif', bonita: 'display', decorativa: 'display', display: 'display', titulo: 'display', mono: 'monospace', monoespacada: 'monospace' };
+async function searchFonts(q, page) {
+  const PER = 48, n = stripAcc(q).replace(/\s+/g, ''), list = await fontList(), qa = stripAcc(q).trim();
+  const cat = FONT_CATS[qa];
+  let hit = list.filter(f => stripAcc(f.family).replace(/\s+/g, '').includes(n) || f.id.replace(/-/g, '').includes(n));
+  if (cat) hit = hit.concat(list.filter(f => f.category === cat && !hit.includes(f)));
+  return hit.slice(page * PER, page * PER + PER).map(f => {
     const w = (f.weights || []).includes(400) ? 400 : (f.weights || [400])[0];
     return { key: 'fs:' + f.id, kind: 'fonte', title: f.family, fontId: f.id, full: `${API.fontcdn}/${f.id}@latest/latin-${w}-normal.woff2`, mime: 'font/woff2',
       source: 'Fontsource', credit: `${f.category || 'fonte'} · licença livre${f.license ? ' (' + f.license + ')' : ''}`, link: `https://fontsource.org/fonts/${f.id}` };
   });
 }
-async function runSearch(q, kind, limit) {
-  if (kind === 'icone') return searchIcons(q, limit);
-  if (kind === 'fonte') return searchFonts(q, limit);
-  if (kind === 'desenho') {   // emojis/ilustrações fofas + desenhos livres
-    const parts = await Promise.allSettled([searchIcons(q, Math.ceil(limit / 2), 'noto,fluent-emoji-flat,twemoji,openmoji'), searchOpenverse(q, Math.floor(limit / 2), 'illustration')]);
-    const ok = parts.filter(p => p.status === 'fulfilled').flatMap(p => p.value);
-    if (!ok.length && parts.every(p => p.status === 'rejected')) throw parts[0].reason; return ok;
-  }
-  try { return await searchOpenverse(q, limit, 'photograph'); } catch (e) { return searchCommons(q, limit); }
+const DRAW_SETS = 'noto,fluent-emoji-flat,twemoji,openmoji,emojione,fxemoji,streamline-emojis,flat-color-icons,twemoji,noto-v1,fluent-emoji,emojione-v1,openmoji';
+async function runSearch(q, kind, page) {   // devolve só a página pedida (0, 1, 2…)
+  const settle = async fns => { const parts = await Promise.allSettled(fns); const ok = parts.filter(p => p.status === 'fulfilled').flatMap(p => p.value);
+    if (!ok.length && parts.every(p => p.status === 'rejected')) throw parts[0].reason; return uniq(ok); };
+  if (kind === 'icone') return searchIcons(q, page);
+  if (kind === 'fonte') return searchFonts(q, page);
+  if (kind === 'desenho') return settle([searchIcons(q, page, DRAW_SETS), searchOpenverse(q, page, 'illustration'), searchCommons(q, page, 'desenho')]);
+  return settle([searchOpenverse(q, page, 'photograph'), searchCommons(q, page, 'foto')]);
 }
 
 /* ---- busca (tela) ---- */
@@ -2395,18 +2403,19 @@ function renderResults() {
     } else { const im = document.createElement('img'); im.loading = 'lazy'; im.alt = ''; im.src = r.thumb; im.onerror = () => { im.style.visibility = 'hidden'; }; b.append(im); }
     const t = document.createElement('small'); t.textContent = r.title; b.append(t); box.append(b);
   });
-  $('#gMore').hidden = !G.results.length || G.results.length < G.limit || G.kind === 'fonte' && G.results.length < G.limit;
+  $('#gMore').hidden = !G.results.length || G.end;
 }
 async function doSearch(more) {
   const q = $('#gQuery').value.trim(); if (!q) { gStatus('Digite o nome do que você procura.'); return; }
   if (G.busy) return; G.busy = true;
-  if (!more) { G.limit = 24; G.results = []; renderResults(); } else G.limit += 24;
+  if (!more) { G.page = 0; G.end = false; G.results = []; renderResults(); } else G.page++;
   G.q = q; gStatus('Buscando…');
   try {
-    const res = await runSearch(q, G.kind, G.limit);
-    G.results = res; renderResults();
-    gStatus(res.length ? `${res.length} resultado${res.length > 1 ? 's' : ''} para “${q}”. Toque para ver, salvar ou baixar.` : `Nada encontrado para “${q}”. Tente outra palavra (em inglês também funciona).`);
-  } catch (e) { gStatus('Não consegui buscar agora. Confira a internet e tente de novo.', 'err'); }
+    const fresh = (await runSearch(q, G.kind, G.page)).filter(r => !G.results.some(o => o.key === r.key));
+    if (!fresh.length) G.end = true;
+    G.results = G.results.concat(fresh); renderResults();
+    gStatus(G.results.length ? `${G.results.length} resultado${G.results.length > 1 ? 's' : ''} para “${q}”.${G.end ? ' Não há mais.' : ' Toque em “Mostrar mais” para ampliar.'} Toque numa imagem para ver, salvar ou baixar.` : `Nada encontrado para “${q}”. Tente outra palavra (em inglês também funciona).`);
+  } catch (e) { G.end = true; renderResults(); gStatus('Não consegui buscar agora. Confira a internet e tente de novo.', 'err'); }
   finally { G.busy = false; }
 }
 
