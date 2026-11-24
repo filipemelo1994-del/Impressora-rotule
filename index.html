@@ -609,6 +609,11 @@ const SHAPES = [
 ];
 const ICONS = [
   ['none', 'Nenhum'],
+  // fofos
+  ['gatinho', 'Gatinho'], ['coelho', 'Coelhinho'], ['urso', 'Ursinho'], ['passaro', 'Passarinho'], ['abelha', 'Abelhinha'],
+  ['joaninha', 'Joaninha'], ['peixe', 'Peixinho'], ['pegada', 'Patinha'], ['carinha', 'Carinha'], ['laco', 'Laço'],
+  ['coroa', 'Coroa'], ['arcoiris', 'Arco-íris'], ['gota', 'Gotinha'], ['trevo', 'Trevo'], ['cupcake', 'Cupcake'],
+  ['sorvete', 'Sorvete'], ['morango', 'Morango'], ['cereja', 'Cerejas'], ['maca', 'Maçã'], ['xicara', 'Xícara'],
   // mágicos
   ['raio', 'Raio'], ['varinha', 'Varinha'], ['chapeu', 'Chapéu'], ['estrela', 'Estrela'], ['lua', 'Lua'],
   ['coruja', 'Coruja'], ['livro', 'Livro'], ['pocao', 'Poção'], ['caldeirao', 'Caldeirão'], ['nuvem', 'Nuvem'],
@@ -636,9 +641,15 @@ const PRESETS = {
   'Mantimentos': ['Arroz','Feijão','Açúcar','Açúcar mascavo','Açúcar refinado','Farinha de trigo','Farinha de mandioca','Fubá','Macarrão','Café','Chá','Aveia','Amido de milho','Fermento','Bicarbonato','Lentilha','Grão-de-bico','Milho de pipoca','Granola','Leite em pó','Achocolatado','Cacau em pó','Castanhas','Amendoim','Uva-passa','Coco ralado','Tapioca','Polvilho','Farinha de rosca','Sagu','Canjica','Ervilha'],
   'Despensa': ['Biscoitos','Cereais','Doces','Salgadinhos','Lanches','Bebidas','Molhos','Enlatados','Conservas','Óleos','Azeite','Vinagre','Temperos prontos','Congelados','Sobras','Frutas','Legumes','Pães','Massas','Sopas','Sobremesas','Marmitas'],
   'Magia': ['Poção','Elixir','Pó mágico','Chá de bruxa','Olho de lagarto','Asa de morcego','Pelo de gato','Sapo seco','Pena de coruja','Raiz de mandrágora','Escama de dragão','Lágrima de fênix','Pó de fada','Feitiço'],
+  'Mercado': ['Promoção','Oferta','Preço|R$ ____','Preço por kg|R$ ____','Peso líquido|____ g','Fabricação|__/__/____','Validade|__/__/____','Lote|____','Produto novo','Artesanal','Feito à mão','Caseiro','Orgânico','Vegano','Sem glúten','Sem lactose','Sem açúcar','Integral','Fresquinho','Reservado','Vendido','Brinde','Tamanho P','Tamanho M','Tamanho G','Sabor|____','Cód.|____'],
+  'Validade': ['Validade|__/__/____','Aberto em|__/__/____','Fabricação|__/__/____','Congelado em|__/__/____','Consumir até|__/__/____','Consumir hoje','Consumir em 3 dias','Descongelar','Não congelar','Manter refrigerado','Sobras','Marmita','Molho caseiro','Caldo','Geleia','Pão caseiro','Bolo','Doce','Arroz cozido','Feijão cozido','Carne','Frango','Peixe','Legumes'],
+  'Notas e papéis': ['Nota fiscal','Nota fiscal|Nº ____','Recibo','Recibo|Nº ____','Garantia','Garantia|até __/__/____','Orçamento','Pedido|Nº ____','Pedido|Cliente ____','Fatura','Boleto','Contrato','Comprovante','Declaração','Pago','Pago em|__/__/____','Pendente','A pagar','Entregue','Cópia','Original','Urgente','Confidencial','Arquivado','Manual'],
+  'Envio': ['Frágil','Este lado para cima','Cuidado','Não dobrar','Perecível','Remetente','Destinatário|____','Pedido|Nº ____','Obrigada!','Feito com amor','Lacre de segurança','Presente','Troca','Devolução'],
+  'Lembrancinhas': ['Feito com amor','Para você','Obrigada','Com carinho','Lembrancinha','Parabéns','Aniversário','Bem-vindos','Natal','Páscoa','Dia das mães','Dia dos namorados','Docinhos','Bem-casado','Brigadeiro','Beijinho','Sabor|____'],
   'Casa': ['Cozinha','Banheiro','Lavanderia','Quarto','Sala','Garagem','Ferramentas','Documentos','Chaves','Pilhas','Remédios','Brinquedos','Material escolar','Costura','Eletrônicos','Cabos','Parafusos','Pregos'],
 };
-const CATS = ['Temperos', 'Mantimentos', 'Despensa', 'Magia', 'Casa', 'Meus'];
+const CATS = ['Temperos', 'Mantimentos', 'Despensa', 'Mercado', 'Validade', 'Notas e papéis', 'Envio', 'Lembrancinhas', 'Magia', 'Casa', 'Meus'];
+const splitPreset = str => { const i = str.indexOf('|'); return i < 0 ? { text: str, sub: '' } : { text: str.slice(0, i), sub: str.slice(i + 1) }; };
 
 const PAPERS = [[40, 20], [40, 30], [50, 30], [50, 40], [58, 40]];   // mesmos tamanhos do app das fichas
 const DEFAULTS = { v:5, autoClear:true, shape:'pill', style:'solid', orn:'floreio', icon:'none', iconPos:'left', font:'sans', upper:true, bold:true, wmm:36, hmm:16, feed:3, ff:false, chunk:20, delay:12,
@@ -1038,6 +1049,89 @@ function drawIcon(ctx, key, cx, cy, s, fg, bg) {
       circ(0, 0, 0.2);
       for (let i = 0; i < 8; i++) { const a = i * Math.PI / 4; ctx.beginPath(); ctx.moveTo(Math.cos(a) * 0.3, Math.sin(a) * 0.3); ctx.lineTo(Math.cos(a) * 0.48, Math.sin(a) * 0.48); ctx.stroke(); }
       break;
+    // ---- desenhos fofos
+    case 'gatinho':
+      circ(0, 0.1, 0.36); poly([[-0.36, 0.02], [-0.33, -0.46], [-0.04, -0.24]]); poly([[0.36, 0.02], [0.33, -0.46], [0.04, -0.24]]);
+      poly([[-0.29, -0.2], [-0.27, -0.34], [-0.15, -0.24]], bg); poly([[0.29, -0.2], [0.27, -0.34], [0.15, -0.24]], bg);
+      circ(-0.14, 0.06, 0.055, bg); circ(0.14, 0.06, 0.055, bg); poly([[-0.05, 0.15], [0.05, 0.15], [0, 0.21]], bg);
+      ctx.strokeStyle = bg; ctx.lineWidth = 0.028; ctx.beginPath(); ctx.arc(-0.045, 0.23, 0.045, 0, Math.PI); ctx.arc(0.045, 0.23, 0.045, 0, Math.PI); ctx.stroke(); break;
+    case 'coelho':
+      ctx.beginPath(); ctx.ellipse(-0.15, -0.24, 0.1, 0.27, -0.12, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(0.15, -0.24, 0.1, 0.27, 0.12, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(-0.15, -0.22, 0.04, 0.17, -0.12, 0, 7); ctx.fillStyle = bg; ctx.fill(); ctx.beginPath(); ctx.ellipse(0.15, -0.22, 0.04, 0.17, 0.12, 0, 7); ctx.fill(); ctx.fillStyle = fg;
+      circ(0, 0.2, 0.31); circ(-0.12, 0.14, 0.05, bg); circ(0.12, 0.14, 0.05, bg); poly([[-0.04, 0.23], [0.04, 0.23], [0, 0.28]], bg); break;
+    case 'urso':
+      circ(-0.27, -0.2, 0.14); circ(0.27, -0.2, 0.14); circ(0, 0.1, 0.35); circ(-0.27, -0.2, 0.06, bg); circ(0.27, -0.2, 0.06, bg);
+      circ(0, 0.2, 0.15, bg); circ(0, 0.16, 0.055); circ(-0.15, 0.02, 0.045, bg); circ(0.15, 0.02, 0.045, bg); break;
+    case 'passaro':
+      ctx.beginPath(); ctx.ellipse(-0.02, 0.12, 0.36, 0.28, -0.1, 0, 7); ctx.fill(); circ(0.18, -0.16, 0.2);
+      poly([[0.35, -0.2], [0.52, -0.14], [0.35, -0.08]]); poly([[-0.32, 0.06], [-0.54, -0.1], [-0.5, 0.2]]);
+      circ(0.23, -0.2, 0.045, bg); ctx.strokeStyle = bg; ctx.lineWidth = 0.04; ctx.beginPath(); ctx.arc(-0.04, 0.1, 0.17, 0.2, 2.6); ctx.stroke();
+      ctx.strokeStyle = fg; ctx.lineWidth = 0.05; ctx.beginPath(); ctx.moveTo(-0.06, 0.38); ctx.lineTo(-0.06, 0.48); ctx.moveTo(0.1, 0.38); ctx.lineTo(0.1, 0.48); ctx.stroke(); break;
+    case 'abelha':
+      ctx.beginPath(); ctx.ellipse(-0.1, -0.22, 0.12, 0.2, -0.5, 0, 7); ctx.fill(); ctx.beginPath(); ctx.ellipse(0.12, -0.24, 0.12, 0.2, 0.5, 0, 7); ctx.fill();
+      ctx.beginPath(); ctx.ellipse(0, 0.1, 0.34, 0.24, 0, 0, 7); ctx.fill(); poly([[0.32, 0.1], [0.5, 0.1], [0.32, 0.16]]);
+      ctx.strokeStyle = bg; ctx.lineWidth = 0.07; [-0.08, 0.1].forEach(x => { ctx.beginPath(); ctx.moveTo(x, -0.06); ctx.lineTo(x, 0.26); ctx.stroke(); });
+      circ(-0.22, 0.04, 0.035, bg); break;
+    case 'joaninha':
+      circ(0, 0.12, 0.36); circ(0, -0.26, 0.15); ctx.strokeStyle = bg; ctx.lineWidth = 0.035; ctx.beginPath(); ctx.moveTo(0, -0.16); ctx.lineTo(0, 0.48); ctx.stroke();
+      circ(-0.17, 0.02, 0.06, bg); circ(0.17, 0.02, 0.06, bg); circ(-0.18, 0.24, 0.05, bg); circ(0.18, 0.24, 0.05, bg);
+      ctx.strokeStyle = fg; ctx.lineWidth = 0.04; ctx.beginPath(); ctx.moveTo(-0.06, -0.36); ctx.lineTo(-0.16, -0.48); ctx.moveTo(0.06, -0.36); ctx.lineTo(0.16, -0.48); ctx.stroke(); break;
+    case 'peixe':
+      ctx.beginPath(); ctx.ellipse(-0.08, 0, 0.36, 0.25, 0, 0, 7); ctx.fill(); poly([[0.24, 0], [0.5, -0.22], [0.5, 0.22]]);
+      circ(-0.24, -0.06, 0.05, bg); ctx.strokeStyle = bg; ctx.lineWidth = 0.035; ctx.beginPath(); ctx.arc(-0.31, 0.06, 0.06, 0.2, 1.4); ctx.stroke();
+      [0, 0.1].forEach(d => { ctx.beginPath(); ctx.arc(0.04 + d, 0, 0.1, -1.0, 1.0); ctx.stroke(); }); break;
+    case 'pegada':
+      ctx.beginPath(); ctx.ellipse(0, 0.2, 0.26, 0.2, 0, 0, 7); ctx.fill(); ctx.beginPath(); ctx.arc(-0.1, 0.38, 0.1, 0, 7); ctx.fill();
+      circ(-0.32, -0.02, 0.1); circ(-0.12, -0.26, 0.11); circ(0.12, -0.26, 0.11); circ(0.32, -0.02, 0.1); break;
+    case 'carinha':
+      circ(0, 0, 0.45); circ(-0.15, -0.08, 0.06, bg); circ(0.15, -0.08, 0.06, bg);
+      ctx.strokeStyle = bg; ctx.lineWidth = 0.06; ctx.beginPath(); ctx.arc(0, 0.04, 0.22, 0.25, Math.PI - 0.25); ctx.stroke(); break;
+    case 'laco':
+      poly([[0, 0], [-0.48, -0.28], [-0.48, 0.28]]); poly([[0, 0], [0.48, -0.28], [0.48, 0.28]]);
+      poly([[-0.05, 0.06], [-0.26, 0.5], [-0.04, 0.38]]); poly([[0.05, 0.06], [0.26, 0.5], [0.04, 0.38]]); circ(0, 0, 0.11);
+      ctx.strokeStyle = bg; ctx.lineWidth = 0.03; ctx.beginPath(); ctx.moveTo(-0.36, -0.14); ctx.lineTo(-0.14, -0.02); ctx.moveTo(0.36, -0.14); ctx.lineTo(0.14, -0.02); ctx.stroke(); break;
+    case 'coroa':
+      poly([[-0.42, 0.32], [-0.46, -0.26], [-0.2, 0.02], [0, -0.4], [0.2, 0.02], [0.46, -0.26], [0.42, 0.32]]);
+      circ(-0.46, -0.3, 0.06); circ(0, -0.44, 0.06); circ(0.46, -0.3, 0.06);
+      ctx.strokeStyle = bg; ctx.lineWidth = 0.04; ctx.beginPath(); ctx.moveTo(-0.4, 0.2); ctx.lineTo(0.4, 0.2); ctx.stroke();
+      circ(-0.2, 0.1, 0.035, bg); circ(0, 0.1, 0.035, bg); circ(0.2, 0.1, 0.035, bg); break;
+    case 'arcoiris':
+      ctx.lineWidth = 0.1; ctx.lineCap = 'butt'; [0.4, 0.27, 0.14].forEach(r => { ctx.beginPath(); ctx.arc(0, 0.2, r, Math.PI, 0); ctx.stroke(); });
+      ctx.lineCap = 'round'; circ(-0.4, 0.26, 0.1); circ(-0.26, 0.28, 0.08); circ(0.4, 0.26, 0.1); circ(0.26, 0.28, 0.08); break;
+    case 'gota':
+      circ(0, 0.14, 0.3); poly([[-0.28, 0.04], [0, -0.5], [0.28, 0.04]]);
+      ctx.strokeStyle = bg; ctx.lineWidth = 0.05; ctx.beginPath(); ctx.arc(0, 0.14, 0.18, 1.9, 2.8); ctx.stroke(); break;
+    case 'trevo':
+      [[-0.17, -0.17], [0.17, -0.17], [-0.17, 0.12], [0.17, 0.12]].forEach(([x, y]) => circ(x, y, 0.2));
+      ctx.lineWidth = 0.08; ctx.beginPath(); ctx.moveTo(0.05, 0.12); ctx.quadraticCurveTo(0.1, 0.38, 0.28, 0.5); ctx.stroke();
+      ctx.strokeStyle = bg; ctx.lineWidth = 0.035; ctx.beginPath(); ctx.moveTo(-0.3, -0.3); ctx.lineTo(0.3, 0.26); ctx.moveTo(0.3, -0.3); ctx.lineTo(-0.3, 0.26); ctx.stroke(); break;
+    case 'cupcake':
+      circ(0, -0.12, 0.22); ctx.beginPath(); ctx.ellipse(0, 0.04, 0.36, 0.14, 0, 0, 7); ctx.fill(); circ(0, -0.38, 0.07);
+      poly([[-0.3, 0.1], [0.3, 0.1], [0.2, 0.48], [-0.2, 0.48]]);
+      ctx.strokeStyle = bg; ctx.lineWidth = 0.035; [-0.14, 0, 0.14].forEach(x => { ctx.beginPath(); ctx.moveTo(x * 1.1, 0.16); ctx.lineTo(x * 0.8, 0.44); ctx.stroke(); }); break;
+    case 'sorvete':
+      poly([[-0.25, 0.1], [0.25, 0.1], [0, 0.5]]); circ(0, -0.1, 0.3); circ(-0.2, 0.1, 0.1); circ(0, 0.12, 0.1); circ(0.2, 0.1, 0.1); circ(0, -0.44, 0.07);
+      ctx.strokeStyle = bg; ctx.lineWidth = 0.03; ctx.beginPath(); ctx.moveTo(-0.14, 0.2); ctx.lineTo(0.06, 0.38); ctx.moveTo(0.14, 0.2); ctx.lineTo(-0.06, 0.38); ctx.stroke();
+      ctx.lineWidth = 0.04; ctx.beginPath(); ctx.arc(-0.02, -0.1, 0.19, 3.3, 4.5); ctx.stroke(); break;
+    case 'morango':
+      ctx.beginPath(); ctx.moveTo(0, 0.5); ctx.bezierCurveTo(-0.52, 0.2, -0.44, -0.3, 0, -0.2); ctx.bezierCurveTo(0.44, -0.3, 0.52, 0.2, 0, 0.5); ctx.fill();
+      poly([[0, -0.18], [-0.24, -0.34], [-0.08, -0.26]]); poly([[0, -0.18], [0.24, -0.34], [0.08, -0.26]]); poly([[0, -0.18], [-0.05, -0.46], [0.05, -0.46]]);
+      [[-0.15, -0.05], [0.15, -0.05], [0, 0.04], [-0.1, 0.2], [0.1, 0.2], [0, 0.34]].forEach(([x, y]) => circ(x, y, 0.03, bg)); break;
+    case 'cereja':
+      circ(-0.2, 0.3, 0.19); circ(0.22, 0.24, 0.19); ctx.lineWidth = 0.05;
+      ctx.beginPath(); ctx.moveTo(-0.2, 0.12); ctx.quadraticCurveTo(-0.12, -0.2, 0.06, -0.42); ctx.moveTo(0.22, 0.06); ctx.quadraticCurveTo(0.2, -0.2, 0.06, -0.42); ctx.stroke();
+      ctx.save(); ctx.translate(0.08, -0.4); ctx.rotate(-0.3); leaf(ctx, 0.3, 0.14); ctx.restore();
+      circ(-0.26, 0.24, 0.04, bg); circ(0.16, 0.18, 0.04, bg); break;
+    case 'maca':
+      circ(-0.15, 0.1, 0.29); circ(0.15, 0.1, 0.29); circ(0, 0.22, 0.28); ctx.lineWidth = 0.06; ctx.beginPath(); ctx.moveTo(0, -0.14); ctx.quadraticCurveTo(0.02, -0.32, 0.08, -0.42); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0.22, -0.34, 0.14, 0.06, -0.35, 0, 7); ctx.fill();
+      ctx.strokeStyle = bg; ctx.lineWidth = 0.04; ctx.beginPath(); ctx.arc(-0.14, 0.14, 0.2, 2.9, 4.2); ctx.stroke(); break;
+    case 'xicara':
+      ctx.beginPath(); ctx.moveTo(-0.34, -0.1); ctx.lineTo(0.34, -0.1); ctx.bezierCurveTo(0.34, 0.4, -0.34, 0.4, -0.34, -0.1); ctx.fill();
+      ctx.lineWidth = 0.08; ctx.beginPath(); ctx.arc(0.36, 0.06, 0.13, -1.4, 1.4); ctx.stroke();
+      ctx.beginPath(); ctx.ellipse(0, 0.44, 0.46, 0.065, 0, 0, 7); ctx.fill();
+      ctx.lineWidth = 0.05; [-0.14, 0.06].forEach(x => { ctx.beginPath(); ctx.moveTo(x, -0.2); ctx.bezierCurveTo(x - 0.08, -0.3, x + 0.08, -0.36, x, -0.46); ctx.stroke(); });
+      circ(-0.12, 0.08, 0.04, bg); circ(0.1, 0.08, 0.04, bg); break;
   }
   ctx.restore();
 }
@@ -1716,7 +1810,7 @@ function renderGrid() {
   list.forEach(text => {
     const b = document.createElement('button'); b.type = 'button'; b.dataset.text = text;
     b.classList.toggle('on', selected.has(text)); b.setAttribute('aria-pressed', selected.has(text));
-    const c = document.createElement('canvas'); renderLabelCanvas(c, { text, sub: '' }, look);
+    const c = document.createElement('canvas'); renderLabelCanvas(c, splitPreset(text), look);
     b.append(c); grid.append(b);
   });
 }
@@ -1858,7 +1952,7 @@ function bind() {
   $('#selPlus').addEventListener('click', () => { selQty = Math.min(20, selQty + 1); updateSelBar(); });
   $('#selClear').addEventListener('click', () => { selected.clear(); renderGrid(); updateSelBar(); });
   $('#selAdd').addEventListener('click', () => {
-    const n = selected.size; selected.forEach(t => addToQueue(t, '', selQty));
+    const n = selected.size; selected.forEach(t => { const q = splitPreset(t); addToQueue(q.text, q.sub, selQty); });
     selected.clear(); selQty = 1; renderGrid(); updateSelBar(); toast(`${n} adicionada${n > 1 ? 's' : ''} à fila ✔`);
   });
 
