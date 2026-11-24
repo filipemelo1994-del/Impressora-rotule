@@ -200,6 +200,38 @@ input[type=text]{margin-top:10px}
 #toast{position:fixed;left:50%;bottom:calc(150px + env(safe-area-inset-bottom));transform:translate(-50%,20px);background:#4a2a3b;color:#fff;padding:11px 18px;border-radius:999px;font-size:.9rem;opacity:0;pointer-events:none;transition:.25s;z-index:50;max-width:90vw;text-align:center;box-shadow:0 10px 26px rgba(74,42,59,.3)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 
+/* ---------- galeria e busca ---------- */
+.gear{flex:none;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:#fff;display:grid;place-items:center;cursor:pointer;box-shadow:0 2px 8px rgba(194,91,130,.08)}
+.gear svg{width:20px;height:20px;stroke:var(--accent);fill:none;stroke-width:1.7;stroke-linecap:round}
+.tiles{grid-auto-rows:1fr}
+.g-form{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;margin:14px 0 10px}
+.g-form input{margin-top:0}
+.hint.err{color:var(--bad)}
+.g-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:10px}
+.g-card{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:4px;border:1.5px solid var(--line);border-radius:18px;background:#fff;padding:8px;cursor:pointer;font:inherit;color:var(--ink);text-align:center;min-width:0}
+.g-card img{width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:10px;background:repeating-conic-gradient(#fff 0 25%,#fbf3f5 0 50%) 0 0/12px 12px}
+.g-card small{font-size:.7rem;line-height:1.2;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;color:var(--ink)}
+.g-card i{font-style:normal;font-size:.62rem;color:var(--gold);font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.g-card.font{justify-content:center;min-height:96px}
+.g-card .fp{font-size:1.5rem;line-height:1.2;word-break:break-word;padding:10px 0}
+.sheet{position:fixed;inset:0;z-index:60;background:rgba(74,42,59,.45);display:flex;align-items:flex-end;justify-content:center;backdrop-filter:blur(3px)}
+.sheet[hidden]{display:none}
+.sheet-card{position:relative;width:100%;max-width:560px;max-height:92vh;overflow:auto;background:#fff;border-radius:28px 28px 0 0;padding:20px 18px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -12px 40px rgba(74,42,59,.3);animation:up .22s ease}
+@keyframes up{from{transform:translateY(40px);opacity:0}to{transform:none;opacity:1}}
+.sheet-x{position:absolute;top:12px;right:12px;width:36px;height:36px;border-radius:50%;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer;font-size:1rem}
+.sheet-prev{display:grid;place-items:center;min-height:190px;border-radius:20px;border:1.5px dashed #ebbccb;background:repeating-conic-gradient(#fff 0 25%,#fbf3f5 0 50%) 0 0/16px 16px;margin:18px 0 6px;padding:10px}
+.sheet-prev img{max-width:100%;max-height:260px;object-fit:contain}
+.sheet-prev.font{background:#fff;text-align:center}
+.sheet-prev .big{font-size:3rem;line-height:1.1}
+.sheet-prev .small{font-size:1.05rem;margin-top:8px;color:var(--ink-2);line-height:1.5}
+body.noscroll{overflow:hidden}
+
+.seg button.f-elegant{font-family:"Cormorant Garamond",serif;font-weight:600;font-size:1rem}
+.seg button.f-quick{font-family:"Quicksand",sans-serif}
+.grid{grid-template-columns:repeat(2,1fr)}
+@media (min-width:560px){.grid{grid-template-columns:repeat(3,1fr)}}
+#presetMode{margin-bottom:10px}
+
 </style>
 </head>
 <body>
@@ -213,6 +245,7 @@ input[type=text]{margin-top:10px}
   <button id="btChip" class="chip-bt" type="button" aria-live="polite">
     <span class="dot" id="btDot"></span><span id="btLabel">Conectar</span>
   </button>
+  <button type="button" class="gear" data-go="ajustes" aria-label="Ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg></button>
 </header>
 
 <div id="compat" class="banner" hidden></div>
@@ -238,6 +271,14 @@ input[type=text]{margin-top:10px}
       <button type="button" class="tile" data-go="modelos">
         <span class="ti"><svg viewBox="0 0 24 24"><path d="M12 21c-5-3-8-6-8-10a4.5 4.5 0 018-2.5A4.5 4.5 0 0120 11c0 4-3 7-8 10z"/></svg></span>
         <b>Modelos prontos</b><small>temperos, despensa, magia</small>
+      </button>
+      <button type="button" class="tile" data-go="galeria" data-sub="buscar">
+        <span class="ti"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg></span>
+        <b>Buscar na internet</b><small>ícones, fotos, desenhos e fontes</small>
+      </button>
+      <button type="button" class="tile" data-go="galeria" data-sub="minha">
+        <span class="ti"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg></span>
+        <b>Minha galeria</b><small id="tileGallery">tudo o que você salvou</small>
       </button>
       <button type="button" class="tile" data-go="fila">
         <span class="ti"><svg viewBox="0 0 24 24"><path d="M7 8V4h10v4"/><rect x="3" y="8" width="18" height="9" rx="2.5"/><rect x="7" y="14" width="10" height="6" rx="1"/></svg></span>
@@ -313,6 +354,8 @@ input[type=text]{margin-top:10px}
           <button type="button" data-v="mono">Técnica</button>
           <button type="button" data-v="script">Cursiva</button>
           <button type="button" data-v="romantic" class="f-romantic">Romântica</button>
+          <button type="button" data-v="elegant" class="f-elegant">Elegante</button>
+          <button type="button" data-v="quick" class="f-quick">Delicada</button>
           <button type="button" data-v="magic" class="f-magic">Bruxo</button>
           <button type="button" data-v="medieval" class="f-medieval">Medieval</button>
         </div>
@@ -416,7 +459,7 @@ input[type=text]{margin-top:10px}
             <label class="field">Fonte
               <select id="edTxtFont">
                 <option value="sans">Simples</option><option value="serif">Clássica</option><option value="mono">Técnica</option>
-                <option value="script">Cursiva</option><option value="romantic">Romântica</option><option value="magic">Bruxo</option><option value="medieval">Medieval</option>
+                <option value="script">Cursiva</option><option value="romantic">Romântica</option><option value="elegant">Elegante</option><option value="quick">Delicada</option><option value="magic">Bruxo</option><option value="medieval">Medieval</option>
               </select>
             </label>
             <label class="field">Tamanho <b id="edTxtSizeOut"></b><input type="range" id="edTxtSize" min="12" max="110" step="1"></label>
@@ -446,7 +489,11 @@ input[type=text]{margin-top:10px}
   <section id="tab-modelos" class="tab">
     <div class="card">
       <h2>Modelos prontos</h2>
-      <p class="hint">Toque nas etiquetas para escolher várias de uma vez. Elas usam a forma e a letra escolhidas em <b><a href="#" data-go="criar" class="lnk">Nova etiqueta</a></b>.</p>
+      <div class="seg" id="presetMode">
+        <button type="button" data-v="auto" class="on">Visual caprichado</button>
+        <button type="button" data-v="mine">Meu estilo de Criar</button>
+      </div>
+      <p class="hint">Toque nas etiquetas para escolher várias de uma vez. No “Visual caprichado” cada modelo ganha forma, moldura, letra e desenho próprios.</p>
       <div class="pills scroll" id="catPills" role="tablist"></div>
       <div class="grid" id="presetGrid"></div>
     </div>
@@ -524,6 +571,40 @@ input[type=text]{margin-top:10px}
     </details>
   </section>
 
+  <!-- ============ GALERIA ============ -->
+  <section id="tab-galeria" class="tab">
+    <div class="card">
+      <h2>Galeria</h2>
+      <div class="seg" id="gSub">
+        <button type="button" data-v="buscar" class="on">Buscar na internet</button>
+        <button type="button" data-v="minha">Minha galeria <span id="gCount"></span></button>
+      </div>
+
+      <div id="gSearch">
+        <form id="gForm" class="g-form" autocomplete="off">
+          <input type="text" id="gQuery" placeholder="Ex.: gato, flor, pimenta, letra bonita…" enterkeyhint="search">
+          <button class="btn primary" type="submit">Buscar</button>
+        </form>
+        <div class="pills" id="gKinds">
+          <button type="button" data-v="icone" class="on">Ícones</button>
+          <button type="button" data-v="desenho">Desenhos</button>
+          <button type="button" data-v="foto">Fotos</button>
+          <button type="button" data-v="fonte">Fontes</button>
+        </div>
+        <p class="hint" id="gStatus">Digite o nome do que você procura e escolha o tipo.</p>
+        <div class="g-grid" id="gResults"></div>
+        <button class="btn" id="gMore" type="button" hidden style="width:100%;margin-top:12px">Mostrar mais</button>
+      </div>
+
+      <div id="gMine" hidden>
+        <input type="text" id="gFilterQ" placeholder="Procurar pelo nome na galeria…">
+        <div class="pills scroll" id="gCats" style="margin-top:10px"></div>
+        <p class="hint" id="gMineInfo"></p>
+        <div class="g-grid" id="gItems"></div>
+      </div>
+    </div>
+  </section>
+
   <!-- ============ AJUSTES ============ -->
   <section id="tab-ajustes" class="tab">
     <div class="card">
@@ -580,8 +661,21 @@ input[type=text]{margin-top:10px}
   <button type="button" data-tab="criar"><svg viewBox="0 0 24 24"><path d="M4 20l1-4L16.5 4.5a2 2 0 013 3L8 19l-4 1z"/></svg>Criar</button>
   <button type="button" data-tab="imagem"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="1.8"/><path d="M4 18l5-5 4 4 3-3 4 4"/></svg>Imagem</button>
   <button type="button" data-tab="fila"><svg viewBox="0 0 24 24"><path d="M7 8V4h10v4"/><rect x="3" y="8" width="18" height="9" rx="2.5"/><rect x="7" y="14" width="10" height="6" rx="1"/></svg>Fila<i id="queueBadge" hidden>0</i></button>
-  <button type="button" data-tab="ajustes"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M18.4 5.6L17 7M7 17l-1.4 1.4"/></svg>Ajustes</button>
+  <button type="button" data-tab="galeria"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><rect x="13" y="13" width="8" height="8" rx="2"/></svg>Galeria</button>
 </nav>
+
+<div id="sheet" class="sheet" hidden>
+  <div class="sheet-card" role="dialog" aria-modal="true">
+    <button class="sheet-x" id="shClose" type="button" aria-label="Fechar">✕</button>
+    <div class="sheet-prev" id="shPrev"></div>
+    <label class="field">Nome na galeria<input type="text" id="shName" maxlength="60"></label>
+    <p class="hint" id="shInfo"></p>
+    <div class="row two"><button id="shSave" class="btn primary" type="button">Salvar na galeria</button><button id="shDl" class="btn" type="button">Baixar</button></div>
+    <div class="row two"><button id="shUse1" class="btn magicbtn" type="button"></button><button id="shUse2" class="btn magicbtn" type="button"></button></div>
+    <button id="shDel" class="btn danger small" type="button" hidden style="margin-top:12px">Excluir da galeria</button>
+    <p class="hint" id="shWarn"></p>
+  </div>
+</div>
 
 <div id="toast" role="status" aria-live="polite"></div>
 
@@ -635,6 +729,8 @@ const FONTS = {
   magic:  '"Cinzel Decorative", Georgia, serif',
   medieval: '"MedievalSharp", Georgia, serif',
   romantic: '"Great Vibes", "Brush Script MT", cursive',
+  elegant: '"Cormorant Garamond", Georgia, "Times New Roman", serif',
+  quick: '"Quicksand", "Segoe UI", Roboto, sans-serif',
 };
 const PRESETS = {
   'Temperos': ['Cebolinha','Salsinha','Pimenta','Tomilho','Alecrim','Açafrão','Curry','Cominho','Cravo','Colorau','Orégano','Louro','Erva-doce','Coentro','Pimenta-do-reino','Manjericão','Hortelã','Gengibre','Canela','Noz-moscada','Páprica','Alho em pó','Cebola em pó','Sal','Sal grosso','Pimenta calabresa','Cúrcuma','Cardamomo','Anis-estrelado','Sálvia','Estragão','Tempero baiano','Chimichurri','Lemon pepper','Gergelim','Linhaça','Chia','Mostarda','Hortelã-pimenta','Cheiro-verde'],
@@ -651,15 +747,94 @@ const PRESETS = {
 const CATS = ['Temperos', 'Mantimentos', 'Despensa', 'Mercado', 'Validade', 'Notas e papéis', 'Envio', 'Lembrancinhas', 'Magia', 'Casa', 'Meus'];
 const splitPreset = str => { const i = str.indexOf('|'); return i < 0 ? { text: str, sub: '' } : { text: str.slice(0, i), sub: str.slice(i + 1) }; };
 
+/* ---------------------------------------------------- visual dos modelos prontos */
+// Cada categoria tem seu "jeito": tamanho, formas, molduras, enfeites e letras. O desenho é escolhido pelo nome.
+const DESIGN = {
+  'Temperos': { size: [38, 24], icon: 'folha', looks: [
+    { shape: 'rounded', style: 'double', orn: 'folhas', font: 'elegant', upper: false, bold: true },
+    { shape: 'ellipse', style: 'outline', orn: 'floreio', font: 'romantic', upper: false, bold: false },
+    { shape: 'ticket', style: 'solid', orn: 'pontos', font: 'elegant', upper: true, bold: true },
+    { shape: 'scallop', style: 'outline', orn: 'none', font: 'quick', upper: false, bold: true }] },
+  'Mantimentos': { size: [38, 24], icon: 'trigo', looks: [
+    { shape: 'rounded', style: 'double', orn: 'none', font: 'quick', upper: true, bold: true },
+    { shape: 'tag', style: 'solid', orn: 'none', font: 'elegant', upper: false, bold: true },
+    { shape: 'ellipse', style: 'double', orn: 'pontos', font: 'elegant', upper: false, bold: true },
+    { shape: 'ribbon', style: 'outline', orn: 'none', font: 'quick', upper: false, bold: true }] },
+  'Despensa': { size: [38, 24], icon: 'maca', looks: [
+    { shape: 'scallop', style: 'outline', orn: 'none', font: 'quick', upper: false, bold: true },
+    { shape: 'rounded', style: 'dashed', orn: 'estrelas', font: 'elegant', upper: false, bold: true },
+    { shape: 'pill', style: 'solid', orn: 'none', font: 'quick', upper: false, bold: true },
+    { shape: 'shield', style: 'double', orn: 'none', font: 'elegant', upper: false, bold: true }] },
+  'Mercado': { size: [38, 24], icon: 'estrela', looks: [
+    { shape: 'ticket', style: 'solid', orn: 'estrelas', font: 'quick', upper: true, bold: true },
+    { shape: 'rounded', style: 'dashed', orn: 'none', font: 'quick', upper: true, bold: true },
+    { shape: 'ribbon', style: 'outline', orn: 'none', font: 'elegant', upper: false, bold: true },
+    { shape: 'tag', style: 'double', orn: 'none', font: 'quick', upper: true, bold: true }] },
+  'Validade': { size: [38, 24], icon: 'none', looks: [
+    { shape: 'rounded', style: 'outline', orn: 'linha', font: 'quick', upper: true, bold: true },
+    { shape: 'tag', style: 'double', orn: 'none', font: 'quick', upper: true, bold: true },
+    { shape: 'ticket', style: 'outline', orn: 'pontos', font: 'elegant', upper: false, bold: true }] },
+  'Notas e papéis': { size: [38, 24], icon: 'none', looks: [
+    { shape: 'rounded', style: 'double', orn: 'linha', font: 'mono', upper: true, bold: true },
+    { shape: 'ribbon', style: 'outline', orn: 'none', font: 'serif', upper: true, bold: true },
+    { shape: 'rounded', style: 'outline', orn: 'none', font: 'elegant', upper: false, bold: true },
+    { shape: 'tag', style: 'solid', orn: 'none', font: 'quick', upper: true, bold: true }] },
+  'Envio': { size: [38, 24], icon: 'none', looks: [
+    { shape: 'octagon', style: 'solid', orn: 'none', font: 'quick', upper: true, bold: true },
+    { shape: 'hexagon', style: 'double', orn: 'none', font: 'quick', upper: true, bold: true },
+    { shape: 'rounded', style: 'solid', orn: 'none', font: 'quick', upper: true, bold: true },
+    { shape: 'ticket', style: 'dashed', orn: 'none', font: 'quick', upper: true, bold: true }] },
+  'Lembrancinhas': { size: [38, 26], icon: ['coracao', 'laco', 'flor', 'coelho', 'borboleta', 'arcoiris', 'estrela', 'gatinho'], looks: [
+    { shape: 'ellipse', style: 'outline', orn: 'floreio', font: 'romantic', upper: false, bold: false, iconPos: 'both' },
+    { shape: 'scallop', style: 'double', orn: 'none', font: 'elegant', upper: false, bold: true },
+    { shape: 'pill', style: 'solid', orn: 'estrelas', font: 'romantic', upper: false, bold: false },
+    { shape: 'rounded', style: 'dashed', orn: 'floreio', font: 'romantic', upper: false, bold: false }] },
+  'Magia': { size: [38, 28], icon: ['estrela', 'lua', 'varinha', 'pocao', 'chapeu', 'coruja'], looks: [
+    { shape: 'ticket', style: 'solid', orn: 'faiscas', font: 'magic', upper: true, bold: true },
+    { shape: 'shield', style: 'double', orn: 'estrelas', font: 'medieval', upper: false, bold: true },
+    { shape: 'ellipse', style: 'outline', orn: 'faiscas', font: 'magic', upper: true, bold: true },
+    { shape: 'rounded', style: 'double', orn: 'nuvens', font: 'medieval', upper: false, bold: true }] },
+  'Casa': { size: [38, 24], icon: 'none', looks: [
+    { shape: 'rounded', style: 'double', orn: 'none', font: 'quick', upper: true, bold: true },
+    { shape: 'tag', style: 'outline', orn: 'none', font: 'elegant', upper: false, bold: true },
+    { shape: 'ellipse', style: 'outline', orn: 'floreio', font: 'elegant', upper: false, bold: true },
+    { shape: 'ticket', style: 'solid', orn: 'none', font: 'quick', upper: true, bold: true }] },
+};
+const ICON_WORDS = [
+  [/alho/, 'alho'], [/cebolinha|salsa|coentro|manjeric|hortel|alecrim|tomilho|oregano|louro|sal(v|b)ia|ervas|manjerona|endro|cheiro/, 'ramo'], [/cebola/, 'cebola'],
+  [/tomate|molho/, 'tomate'], [/cenour/, 'cenoura'], [/limao|limon/, 'limao'], [/pimentao/, 'pimentao'], [/pimenta|colorau|paprica|curry|chili/, 'pimenta'],
+  [/cogumel|shimeji/, 'cogumelo'], [/milho|fuba|pipoca|canjica/, 'milho'], [/farinha|trigo|aveia|cereal|macarrao|massa|pao|biscoito|bolacha|granola/, 'trigo'],
+  [/cafe/, 'cafe'], [/cha\b|camomila|cidreira|infus/, 'xicara'], [/canela/, 'canela'], [/anis|erva-doce|cravo|cominho/, 'anis'], [/\bsal\b|saleiro/, 'saleiro'],
+  [/acucar|adocante|mel\b/, 'colher'], [/bolo|doce|brigadeiro|beijinho|bem-casado|docinho|cupcake|sobremesa/, 'cupcake'], [/sorvete|gelad/, 'sorvete'],
+  [/morango|gelei|geleia/, 'morango'], [/cereja/, 'cereja'], [/maca|fruta|laranja|banana|uva/, 'maca'], [/flor|rosa|lavanda|jardim/, 'flor'], [/margarida/, 'margarida'],
+  [/girassol/, 'girassol'], [/cacto/, 'cacto'], [/planta|vaso|broto/, 'broto'], [/amor|namorad|carinho|obrigad|coracao|mae|para voce/, 'coracao'],
+  [/pascoa/, 'coelho'], [/gat/, 'gatinho'], [/peixe/, 'peixe'], [/leite|oleo|azeite|vinagre|agua|bebida|suco/, 'gota'], [/livro|document|manual|contrato|declaracao|caderno/, 'livro'],
+  [/promocao|oferta|novo|natal|parabens|aniversario|estrela/, 'estrela'], [/brinde|presente|lembrancinha|laco/, 'laco'], [/fragil|vidro|copo|xicara/, 'xicara'],
+  [/pocao|elixir|remedio/, 'pocao'], [/caldeirao|bruxa|sapo|lagarto|olho/, 'caldeirao'], [/lua/, 'lua'], [/varinha|magico|magia/, 'varinha'], [/coruja|pena/, 'coruja'],
+  [/chapeu/, 'chapeu'], [/fada|borboleta|feerica/, 'borboleta'], [/arco/, 'arcoiris'], [/dragao|raio|trovao/, 'raio'], [/fenix|sol\b/, 'sol'], [/mandragora|raiz/, 'broto'],
+  [/abelha|mel/, 'abelha'], [/ovo|bacon/, 'joaninha'],
+];
+function iconFor(text, theme, idx) {
+  const t = stripAcc(text);
+  for (const [re, ic] of ICON_WORDS) if (re.test(t)) return ic;
+  return Array.isArray(theme.icon) ? theme.icon[idx % theme.icon.length] : theme.icon;
+}
+function designFor(cat, str, idx) {
+  const { text, sub } = splitPreset(str), th = DESIGN[cat] || DESIGN['Temperos'], base = th.looks[idx % th.looks.length];
+  return { text, sub, size: th.size, look: Object.assign({ iconPos: 'left' }, base, { icon: S.presetMode === 'mine' ? S.icon : iconFor(text, th, idx) }) };
+}
+const itemDims = it => it && it.size ? { w: Math.min(PAPER, Math.round(it.size[0] * DPMM)), h: Math.round(it.size[1] * DPMM) } : dims();
+
 const PAPERS = [[40, 20], [40, 30], [50, 30], [50, 40], [58, 40]];   // mesmos tamanhos do app das fichas
-const DEFAULTS = { v:5, autoClear:true, shape:'pill', style:'solid', orn:'floreio', icon:'none', iconPos:'left', font:'sans', upper:true, bold:true, wmm:36, hmm:16, feed:3, ff:false, chunk:20, delay:12,
+const DEFAULTS = { v:6, autoClear:true, presetMode:'auto', shape:'pill', style:'solid', orn:'floreio', icon:'none', iconPos:'left', font:'sans', upper:true, bold:true, wmm:36, hmm:16, feed:3, ff:false, chunk:20, delay:12,
   proto:'tspl', pw:40, ph:30, gap:2, dens:6, inv:false, erode:1 };
 const savedSettings = store.get('rotule.settings', {});
 let S = Object.assign({}, DEFAULTS, savedSettings);
 // v2: pacotes de 20 bytes (limite seguro do BLE no Android); v3: protocolo TSPL (o que a POS-5820 entende)
 if (!savedSettings.v || savedSettings.v < 3) { S.chunk = 20; S.delay = 12; S.proto = 'tspl'; }
 if (!savedSettings.v || savedSettings.v < 4) { S.dens = 6; S.erode = 1; }
-if (!savedSettings.v || savedSettings.v < 5) { S.v = 5; S.autoClear = true; store.set('rotule.settings', S); }
+if (!savedSettings.v || savedSettings.v < 5) { S.autoClear = true; }
+if (!savedSettings.v || savedSettings.v < 6) { S.v = 6; S.presetMode = 'auto'; store.set('rotule.settings', S); }
 let queue = store.get('rotule.queue', []);
 let mine  = store.get('rotule.mine', []);
 let category = 'Temperos';
@@ -862,6 +1037,10 @@ function ornament(ctx, kind, cx, cy, wd, hh, color, flip) {
 // Desenhos simples numa caixa de 1×1 centrada em (cx, cy). fg = cor do traço, bg = cor do fundo.
 function drawIcon(ctx, key, cx, cy, s, fg, bg) {
   if (!key || key === 'none') return;
+  if (key.startsWith('g:')) {   // desenho salvo na galeria
+    const t = gTinted(key.slice(2), fg); if (t) { ctx.save(); ctx.translate(cx, cy); ctx.drawImage(t, -s / 2, -s / 2, s, s); ctx.restore(); }
+    return;
+  }
   ctx.save(); ctx.translate(cx, cy); ctx.scale(s, s);
   ctx.fillStyle = ctx.strokeStyle = fg; ctx.lineWidth = 0.08; ctx.lineCap = ctx.lineJoin = 'round'; ctx.setLineDash([]);
   const circ = (x, y, r, c) => { ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fillStyle = c || fg; ctx.fill(); ctx.fillStyle = fg; };
@@ -1238,7 +1417,7 @@ function lookOf(src) { return { shape: src.shape, style: src.style, orn: src.orn
 function dims() { return { w: Math.min(PAPER, Math.round(S.wmm * DPMM)), h: Math.round(S.hmm * DPMM) }; }
 
 function renderLabelCanvas(cv, item, look) {
-  const { w, h } = dims();
+  const { w, h } = itemDims(item);
   cv.width = w; cv.height = h;
   const ctx = cv.getContext('2d');
   ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, w, h);
@@ -1297,7 +1476,7 @@ function canvasToEscpos(cv) {
 /* -------------------------------------------------------------------- TSPL */
 function itemSource(it) {
   if (it.img) { const im = getImg(it.img); return im.ok ? { cv: im, w: im.naturalWidth, h: im.naturalHeight, img: true } : null; }
-  const { w, h } = dims(), lab = document.createElement('canvas'); lab.width = w; lab.height = h;
+  const { w, h } = itemDims(it), lab = document.createElement('canvas'); lab.width = w; lab.height = h;
   const lc = lab.getContext('2d'); lc.fillStyle = '#fff'; lc.fillRect(0, 0, w, h);
   drawLabel(lc, 0, 0, w, h, it, it.look || lookOf(S));
   return { cv: lab, w, h, img: false };
@@ -1456,10 +1635,11 @@ function updateBadge() {
 }
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-function addToQueue(text, sub, qty) {
+function addToQueue(text, sub, qty, look, size) {
   text = (text || '').trim(); if (!text) return false;
-  const ex = queue.find(q => q.text === text && (q.sub || '') === (sub || '') && JSON.stringify(q.look) === JSON.stringify(lookOf(S)));
-  if (ex) ex.qty += qty; else queue.push({ id: uid(), text, sub: sub || '', qty, look: lookOf(S) });
+  look = look || lookOf(S);
+  const ex = queue.find(q => q.text === text && (q.sub || '') === (sub || '') && JSON.stringify(q.look) === JSON.stringify(look) && JSON.stringify(q.size || null) === JSON.stringify(size || null));
+  if (ex) ex.qty += qty; else queue.push({ id: uid(), text, sub: sub || '', qty, look, size: size || null });
   saveQueue(); return true;
 }
 
@@ -1624,6 +1804,11 @@ async function edOpen(files) {
   const ims = await Promise.all(files.map(loadFileImage));
   ED.items = ims.map((im, i) => ({ name: files[i].name.replace(/\.[^.]+$/, ''), im, E: newE() })); ED.idx = 0; ED.move = 'img';
   $('#edEmpty').hidden = true; $('#edBox').hidden = false; edSync();
+}
+function edOpenCanvases(list) {
+  const add = list.map(x => ({ name: x.name, im: x.canvas, E: newE() }));
+  if (!ED.items.length) { ED.items = add; ED.idx = 0; } else { ED.idx = ED.items.length; ED.items.push(...add); }
+  ED.move = 'img'; $('#edEmpty').hidden = true; $('#edBox').hidden = false; edSync();
 }
 function edClose() { ED.items = []; $('#edBox').hidden = true; $('#edEmpty').hidden = false; }
 function edToQueue() {
@@ -1802,16 +1987,21 @@ function buildCategoryPills() {
 }
 
 let gridTimer = null;
+const PKEY = '\t';
+function presetDesign(cat, str, idx) {   // desenho do modelo conforme o modo escolhido
+  if (S.presetMode === 'mine') { const q = splitPreset(str); return { text: q.text, sub: q.sub, look: lookOf(S), size: null }; }
+  return designFor(cat, str, idx);
+}
 function renderGrid() {
   const list = category === 'Meus' ? mine : PRESETS[category] || [];
   const grid = $('#presetGrid'); grid.innerHTML = '';
-  if (!list.length) { grid.innerHTML = '<p class="empty" style="grid-column:1/-1">Você ainda não salvou nenhum texto. Escreva acima e toque em “Salvar em Meus”.</p>'; return; }
-  const look = lookOf(S);
-  list.forEach(text => {
-    const b = document.createElement('button'); b.type = 'button'; b.dataset.text = text;
-    b.classList.toggle('on', selected.has(text)); b.setAttribute('aria-pressed', selected.has(text));
-    const c = document.createElement('canvas'); renderLabelCanvas(c, splitPreset(text), look);
-    b.append(c); grid.append(b);
+  $$('#presetMode button').forEach(b => b.classList.toggle('on', b.dataset.v === S.presetMode));
+  if (!list.length) { grid.innerHTML = '<p class="empty" style="grid-column:1/-1">Você ainda não salvou nenhum texto. Escreva em <b>Criar</b> e toque em “Salvar em Meus”.</p>'; return; }
+  list.forEach((str, i) => {
+    const key = category + PKEY + str, b = document.createElement('button'); b.type = 'button'; b.dataset.text = key;
+    b.classList.toggle('on', selected.has(key)); b.setAttribute('aria-pressed', selected.has(key));
+    const c = document.createElement('canvas'), d = presetDesign(category === 'Meus' ? 'Temperos' : category, str, i);
+    renderLabelCanvas(c, d, d.look); b.append(c); grid.append(b);
   });
 }
 function scheduleGrid() { clearTimeout(gridTimer); gridTimer = setTimeout(() => { renderGrid(); renderLive(); }, 40); }
@@ -1909,7 +2099,7 @@ async function sheetBlob() {
 /* --------------------------------------------------------------- eventos */
 function bind() {
   $$('.tabbar button').forEach(b => b.addEventListener('click', () => setTab(b.dataset.tab)));
-  document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); setTab(g.dataset.go); } });
+  document.addEventListener('click', e => { const g = e.target.closest('[data-go]'); if (g) { e.preventDefault(); setTab(g.dataset.go); if (g.dataset.sub) gSetSub(g.dataset.sub); } });
   $('#optAutoClear').addEventListener('change', e => { S.autoClear = e.target.checked; saveSettings(); });
   $('#btChip').addEventListener('click', () => { setTab('ajustes'); });
 
@@ -1941,6 +2131,7 @@ function bind() {
     category = 'Meus'; buildCategoryPills(); renderGrid(); toast('Salvo em “Meus”');
   });
 
+  $('#presetMode').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; S.presetMode = b.dataset.v; saveSettings(); renderGrid(); });
   $('#catPills').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; category = b.dataset.v; buildCategoryPills(); renderGrid(); });
   $('#presetGrid').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
@@ -1952,7 +2143,11 @@ function bind() {
   $('#selPlus').addEventListener('click', () => { selQty = Math.min(20, selQty + 1); updateSelBar(); });
   $('#selClear').addEventListener('click', () => { selected.clear(); renderGrid(); updateSelBar(); });
   $('#selAdd').addEventListener('click', () => {
-    const n = selected.size; selected.forEach(t => { const q = splitPreset(t); addToQueue(q.text, q.sub, selQty); });
+    const n = selected.size;
+    selected.forEach(key => {
+      const [cat, str] = key.split(PKEY), list = cat === 'Meus' ? mine : PRESETS[cat] || [], d = presetDesign(cat === 'Meus' ? 'Temperos' : cat, str, Math.max(0, list.indexOf(str)));
+      addToQueue(d.text, d.sub, selQty, d.look, d.size);
+    });
     selected.clear(); selQty = 1; renderGrid(); updateSelBar(); toast(`${n} adicionada${n > 1 ? 's' : ''} à fila ✔`);
   });
 
@@ -2027,12 +2222,328 @@ function bind() {
   $('#btnInstall').addEventListener('click', async () => { if (!deferred) return; deferred.prompt(); await deferred.userChoice; deferred = null; $('#btnInstall').hidden = true; });
 }
 
+/* ================================================================ BUSCA NA INTERNET + GALERIA */
+// Serviços abertos que aceitam chamadas direto do navegador (sem chave):
+//  Iconify (ícones/emojis), Openverse e Wikimedia Commons (fotos e desenhos livres), Fontsource (fontes).
+const API = {
+  iconify: 'https://api.iconify.design', openverse: 'https://api.openverse.org/v1',
+  commons: 'https://commons.wikimedia.org/w/api.php', fontsource: 'https://api.fontsource.org/v1',
+  fontcdn: 'https://cdn.jsdelivr.net/fontsource/fonts',
+};
+const KIND_NAME = { icone: 'Ícone', desenho: 'Desenho', foto: 'Foto', fonte: 'Fonte' };
+const KIND_PLURAL = { icone: 'Ícones', desenho: 'Desenhos', foto: 'Fotos', fonte: 'Fontes' };
+
+// pt-BR -> inglês (os serviços entendem melhor inglês). Palavras fora da lista seguem como foram escritas.
+const PT_EN = {
+  gato: 'cat', gatinho: 'cat', cachorro: 'dog', cao: 'dog', coelho: 'rabbit', urso: 'bear', passaro: 'bird', passarinho: 'bird', abelha: 'bee', borboleta: 'butterfly',
+  joaninha: 'ladybug', peixe: 'fish', flor: 'flower', flores: 'flowers', rosa: 'rose', margarida: 'daisy', girassol: 'sunflower', tulipa: 'tulip', folha: 'leaf', planta: 'plant',
+  arvore: 'tree', coracao: 'heart', estrela: 'star', lua: 'moon', sol: 'sun', nuvem: 'cloud', chuva: 'rain', arcoiris: 'rainbow', tempero: 'spice', temperos: 'spices',
+  pimenta: 'pepper', alho: 'garlic', cebola: 'onion', tomate: 'tomato', cenoura: 'carrot', limao: 'lemon', laranja: 'orange', maca: 'apple', morango: 'strawberry', cereja: 'cherry',
+  banana: 'banana', uva: 'grape', abacaxi: 'pineapple', pao: 'bread', bolo: 'cake', cafe: 'coffee', cha: 'tea', xicara: 'cup', leite: 'milk', queijo: 'cheese', ovo: 'egg',
+  carne: 'meat', frango: 'chicken', arroz: 'rice', feijao: 'beans', milho: 'corn', trigo: 'wheat', sal: 'salt', acucar: 'sugar', cozinha: 'kitchen', casa: 'house', cama: 'bed',
+  livro: 'book', caderno: 'notebook', lapis: 'pencil', tesoura: 'scissors', chave: 'key', presente: 'gift', festa: 'party', balao: 'balloon', natal: 'christmas', pascoa: 'easter',
+  bruxa: 'witch', magia: 'magic', varinha: 'wand', pocao: 'potion', chapeu: 'hat', coroa: 'crown', fada: 'fairy', unicornio: 'unicorn', dragao: 'dragon', bebe: 'baby', mae: 'mother',
+  amor: 'love', sorvete: 'ice cream', doce: 'candy', chocolate: 'chocolate', hamburguer: 'burger', remedio: 'medicine', ferramenta: 'tool', carro: 'car', bicicleta: 'bicycle',
+  aviao: 'airplane', musica: 'music', dinheiro: 'money', preco: 'price', promocao: 'sale', desconto: 'discount', fita: 'ribbon', laco: 'bow', garrafa: 'bottle', pote: 'jar',
+  caixa: 'box', sacola: 'bag', cesta: 'basket', vela: 'candle', espelho: 'mirror', relogio: 'clock', telefone: 'phone', computador: 'computer', foto: 'photo', mapa: 'map',
+  folhas: 'leaves', verde: 'green', vermelho: 'red', azul: 'blue', amarelo: 'yellow', fofo: 'cute', bonito: 'beautiful', bonita: 'beautiful', elegante: 'elegant', letra: 'font',
+};
+const stripAcc = s => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const toEnglish = q => stripAcc(q).split(/[\s,;]+/).filter(Boolean).map(w => PT_EN[w] || w).join(' ');
+const slug = s => stripAcc(s).replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'item';
+
+/* ---- armazenamento (IndexedDB; se o navegador bloquear, guarda só na memória) ---- */
+const DB = { db: null, mem: new Map(), memMeta: new Map() };
+function dbOpen() {
+  return new Promise(res => {
+    try {
+      const r = indexedDB.open('rotule-db', 1);
+      r.onupgradeneeded = () => { r.result.createObjectStore('items', { keyPath: 'id' }); r.result.createObjectStore('meta'); };
+      r.onsuccess = () => res(r.result); r.onerror = () => res(null); r.onblocked = () => res(null);
+    } catch (e) { res(null); }
+  });
+}
+function idb(store, mode, fn) {
+  return new Promise((res, rej) => {
+    const t = DB.db.transaction(store, mode), rq = fn(t.objectStore(store));
+    t.oncomplete = () => res(rq && rq.result); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+  });
+}
+const gAll = () => DB.db ? idb('items', 'readonly', s => s.getAll()) : Promise.resolve([...DB.mem.values()]);
+const gPut = it => DB.db ? idb('items', 'readwrite', s => s.put(it)) : Promise.resolve(DB.mem.set(it.id, it));
+const gDel = id => DB.db ? idb('items', 'readwrite', s => s.delete(id)) : Promise.resolve(DB.mem.delete(id));
+const metaGet = k => DB.db ? idb('meta', 'readonly', s => s.get(k)).catch(() => null) : Promise.resolve(DB.memMeta.get(k));
+const metaSet = (k, v) => DB.db ? idb('meta', 'readwrite', s => s.put(v, k)).catch(() => {}) : Promise.resolve(DB.memMeta.set(k, v));
+
+const G = { items: [], sub: 'buscar', kind: 'icone', q: '', results: [], limit: 24, filter: 'tudo', fq: '', urls: new Map(), busy: false, fontList: null };
+const CF = {};              // fontes salvas: chave -> nome
+const GMASK = {};           // silhuetas dos ícones salvos: id -> { img }
+const gUrl = it => { let u = G.urls.get(it.id); if (!u) { u = URL.createObjectURL(it.blob); G.urls.set(it.id, u); } return u; };
+
+/* ---- fontes salvas viram opções de letra ---- */
+async function registerFont(it) {
+  const fam = 'rt' + it.id, key = 'cf_' + it.id;
+  if (!FONTS[key]) {
+    const ff = new FontFace(fam, await it.blob.arrayBuffer()); await ff.load(); document.fonts.add(ff);
+    FONTS[key] = `"${fam}", sans-serif`;
+  }
+  CF[key] = it.name; return key;
+}
+function rebuildFontUi() {
+  $$('#fontSeg button.cf').forEach(b => b.remove()); $$('#edTxtFont option.cf').forEach(o => o.remove());
+  Object.keys(CF).forEach(k => {
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.v = k; b.className = 'cf'; b.textContent = CF[k]; b.style.fontFamily = FONTS[k];
+    $('#fontSeg').append(b);
+    const o = document.createElement('option'); o.value = k; o.className = 'cf'; o.textContent = CF[k] + ' (minha)'; $('#edTxtFont').append(o);
+  });
+  syncControls();
+}
+
+/* ---- desenhos salvos viram "Desenho pequeno" ---- */
+function maskFromCanvas(src) {   // vira silhueta preta com fundo transparente, 256x256
+  const c = document.createElement('canvas'); c.width = c.height = 256; const x = c.getContext('2d', { willReadFrequently: true });
+  x.fillStyle = '#fff'; x.fillRect(0, 0, 256, 256);
+  const w = src.naturalWidth || src.width, h = src.naturalHeight || src.height, k = Math.min(240 / w, 240 / h);
+  x.imageSmoothingQuality = 'high'; x.drawImage(src, (256 - w * k) / 2, (256 - h * k) / 2, w * k, h * k);
+  const d = x.getImageData(0, 0, 256, 256), p = d.data;
+  for (let i = 0; i < p.length; i += 4) { const a = (0.299 * p[i] + 0.587 * p[i + 1] + 0.114 * p[i + 2]) < 175 ? 255 : 0; p[i] = p[i + 1] = p[i + 2] = 0; p[i + 3] = a; }
+  x.putImageData(d, 0, 0); return new Promise(r => c.toBlob(r, 'image/png'));
+}
+function registerMask(it) {
+  if (!it.mask || GMASK[it.id]) return Promise.resolve();
+  return new Promise(res => {
+    const img = new Image(); img.onload = () => { GMASK[it.id] = { img, tint: {} }; res(); }; img.onerror = () => res(); img.src = URL.createObjectURL(it.mask);
+  }).then(() => { if (!ICONS.some(i => i[0] === 'g:' + it.id)) ICONS.push(['g:' + it.id, it.name]); });
+}
+function gTinted(id, fg) {
+  const m = GMASK[id]; if (!m) return null;
+  if (!m.tint[fg]) { const c = document.createElement('canvas'); c.width = c.height = 160; const x = c.getContext('2d'); x.drawImage(m.img, 0, 0, 160, 160); x.globalCompositeOperation = 'source-in'; x.fillStyle = fg; x.fillRect(0, 0, 160, 160); m.tint[fg] = c; }
+  return m.tint[fg];
+}
+
+/* ---- rede ---- */
+async function jget(url) { const r = await fetch(url); if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }
+const enc = encodeURIComponent;
+const stripTags = h => (h || '').replace(/<[^>]*>/g, '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+
+async function searchIcons(q, limit, prefixes) {
+  const data = await jget(`${API.iconify}/search?query=${enc(toEnglish(q))}&limit=${Math.max(32, limit)}${prefixes ? '&prefixes=' + prefixes : ''}`);
+  return (data.icons || []).slice(0, limit).map(full => {
+    const [prefix, name] = full.split(':');
+    return { key: 'if:' + full, kind: prefixes ? 'desenho' : 'icone', title: name.replace(/-/g, ' '), thumb: `${API.iconify}/${prefix}/${name}.svg?height=96`,
+      full: `${API.iconify}/${prefix}/${name}.svg?height=512`, mime: 'image/svg+xml', source: `Iconify · ${prefix}`, credit: `Conjunto “${prefix}” (confira a licença do conjunto)`, link: `https://icon-sets.iconify.design/${prefix}/${name}/` };
+  });
+}
+async function searchOpenverse(q, limit, category) {
+  const data = await jget(`${API.openverse}/images/?q=${enc(toEnglish(q))}&page_size=${Math.min(limit, 20)}&category=${category}&mature=false`);
+  return (data.results || []).map(r => ({
+    key: 'ov:' + r.id, kind: category === 'illustration' ? 'desenho' : 'foto', title: r.title || q, thumb: r.thumbnail || `${API.openverse}/images/${r.id}/thumb/`,
+    full: `${API.openverse}/images/${r.id}/thumb/`, mime: 'image/jpeg', source: 'Openverse', credit: `${r.creator || 'autor desconhecido'} · ${(r.license || '').toUpperCase()} ${r.license_version || ''}`.trim(), link: r.foreign_landing_url || r.url,
+  }));
+}
+async function searchCommons(q, limit) {
+  const data = await jget(`${API.commons}?action=query&generator=search&gsrnamespace=6&gsrsearch=${enc(q)}&gsrlimit=${Math.min(limit, 30)}&prop=imageinfo&iiprop=url|extmetadata|mime&iiurlwidth=600&format=json&origin=*`);
+  return Object.values((data.query && data.query.pages) || {}).filter(p => p.imageinfo && /^image\/(jpeg|png|svg|webp)/.test(p.imageinfo[0].mime || '')).map(p => {
+    const ii = p.imageinfo[0], m = ii.extmetadata || {};
+    return { key: 'cm:' + p.pageid, kind: 'foto', title: p.title.replace(/^File:/, '').replace(/\.[a-z]+$/i, ''), thumb: ii.thumburl || ii.url, full: ii.thumburl || ii.url, mime: ii.mime,
+      source: 'Wikimedia Commons', credit: `${stripTags(m.Artist && m.Artist.value) || 'autor desconhecido'} · ${stripTags(m.LicenseShortName && m.LicenseShortName.value)}`, link: ii.descriptionshorturl };
+  });
+}
+async function fontList() {
+  if (G.fontList) return G.fontList;
+  const cached = await metaGet('fontlist');
+  if (cached && Date.now() - cached.t < 7 * 864e5) return (G.fontList = cached.list);
+  const raw = await jget(`${API.fontsource}/fonts`);
+  const list = raw.filter(f => (f.subsets || []).includes('latin')).map(f => ({ id: f.id, family: f.family, weights: f.weights, styles: f.styles, category: f.category, license: f.license }));
+  metaSet('fontlist', { t: Date.now(), list }); return (G.fontList = list);
+}
+async function searchFonts(q, limit) {
+  const n = stripAcc(q).replace(/\s+/g, ''), list = await fontList();
+  const hit = list.filter(f => stripAcc(f.family).replace(/\s+/g, '').includes(n) || f.id.replace(/-/g, '').includes(n));
+  return hit.slice(0, limit).map(f => {
+    const w = (f.weights || []).includes(400) ? 400 : (f.weights || [400])[0];
+    return { key: 'fs:' + f.id, kind: 'fonte', title: f.family, fontId: f.id, full: `${API.fontcdn}/${f.id}@latest/latin-${w}-normal.woff2`, mime: 'font/woff2',
+      source: 'Fontsource', credit: `${f.category || 'fonte'} · licença livre${f.license ? ' (' + f.license + ')' : ''}`, link: `https://fontsource.org/fonts/${f.id}` };
+  });
+}
+async function runSearch(q, kind, limit) {
+  if (kind === 'icone') return searchIcons(q, limit);
+  if (kind === 'fonte') return searchFonts(q, limit);
+  if (kind === 'desenho') {   // emojis/ilustrações fofas + desenhos livres
+    const parts = await Promise.allSettled([searchIcons(q, Math.ceil(limit / 2), 'noto,fluent-emoji-flat,twemoji,openmoji'), searchOpenverse(q, Math.floor(limit / 2), 'illustration')]);
+    const ok = parts.filter(p => p.status === 'fulfilled').flatMap(p => p.value);
+    if (!ok.length && parts.every(p => p.status === 'rejected')) throw parts[0].reason; return ok;
+  }
+  try { return await searchOpenverse(q, limit, 'photograph'); } catch (e) { return searchCommons(q, limit); }
+}
+
+/* ---- busca (tela) ---- */
+const FONT_PREVIEW = {};
+async function loadPreviewFont(res) {   // fonte de pré-visualização (não fica salva)
+  if (FONT_PREVIEW[res.fontId]) return FONT_PREVIEW[res.fontId];
+  const fam = 'pv' + res.fontId.replace(/[^a-z0-9]/g, ''), ff = new FontFace(fam, `url(${res.full})`);
+  await ff.load(); document.fonts.add(ff); return (FONT_PREVIEW[res.fontId] = fam);
+}
+function gStatus(msg, cls) { const p = $('#gStatus'); p.textContent = msg; p.className = 'hint' + (cls ? ' ' + cls : ''); }
+function renderResults() {
+  const box = $('#gResults'); box.innerHTML = '';
+  G.results.forEach((r, i) => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'g-card'; b.dataset.i = i;
+    if (r.kind === 'fonte') {
+      b.classList.add('font'); const s = document.createElement('span'); s.className = 'fp'; s.textContent = 'Rotulê Aa'; b.append(s);
+      loadPreviewFont(r).then(fam => { s.style.fontFamily = `"${fam}"`; }).catch(() => { s.textContent = 'Aa'; });
+    } else { const im = document.createElement('img'); im.loading = 'lazy'; im.alt = ''; im.src = r.thumb; im.onerror = () => { im.style.visibility = 'hidden'; }; b.append(im); }
+    const t = document.createElement('small'); t.textContent = r.title; b.append(t); box.append(b);
+  });
+  $('#gMore').hidden = !G.results.length || G.results.length < G.limit || G.kind === 'fonte' && G.results.length < G.limit;
+}
+async function doSearch(more) {
+  const q = $('#gQuery').value.trim(); if (!q) { gStatus('Digite o nome do que você procura.'); return; }
+  if (G.busy) return; G.busy = true;
+  if (!more) { G.limit = 24; G.results = []; renderResults(); } else G.limit += 24;
+  G.q = q; gStatus('Buscando…');
+  try {
+    const res = await runSearch(q, G.kind, G.limit);
+    G.results = res; renderResults();
+    gStatus(res.length ? `${res.length} resultado${res.length > 1 ? 's' : ''} para “${q}”. Toque para ver, salvar ou baixar.` : `Nada encontrado para “${q}”. Tente outra palavra (em inglês também funciona).`);
+  } catch (e) { gStatus('Não consegui buscar agora. Confira a internet e tente de novo.', 'err'); }
+  finally { G.busy = false; }
+}
+
+/* ---- galeria (tela) ---- */
+async function loadGallery() {
+  G.items = (await gAll().catch(() => [])).sort((a, b) => b.addedAt - a.addedAt);
+  for (const it of G.items) { if (it.kind === 'fonte') { try { await registerFont(it); } catch (e) {} } else await registerMask(it); }
+  rebuildFontUi(); buildIconButtons(); syncControls(); renderGallery(); scheduleGrid();
+}
+function renderGallery() {
+  $('#gCount').textContent = G.items.length ? `(${G.items.length})` : '';
+  const tg = $('#tileGallery'); if (tg) tg.textContent = G.items.length ? `${G.items.length} salvo${G.items.length > 1 ? 's' : ''}` : 'tudo o que você salvar';
+  const cats = $('#gCats'); cats.innerHTML = '';
+  [['tudo', 'Tudo'], ...Object.entries(KIND_PLURAL)].forEach(([k, label]) => {
+    const n = k === 'tudo' ? G.items.length : G.items.filter(i => i.kind === k).length;
+    const b = document.createElement('button'); b.type = 'button'; b.dataset.v = k; b.textContent = `${label} ${n}`; b.classList.toggle('on', G.filter === k); cats.append(b);
+  });
+  const q = stripAcc(G.fq), list = G.items.filter(i => (G.filter === 'tudo' || i.kind === G.filter) && (!q || stripAcc(i.name + ' ' + (i.query || '')).includes(q)));
+  $('#gMineInfo').textContent = G.items.length ? (list.length ? '' : 'Nada com esse nome.') : 'Sua galeria está vazia. Busque na internet e toque em “Salvar na galeria”.';
+  const box = $('#gItems'); box.innerHTML = '';
+  list.forEach(it => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'g-card' + (it.kind === 'fonte' ? ' font' : ''); b.dataset.id = it.id;
+    if (it.kind === 'fonte') { const s = document.createElement('span'); s.className = 'fp'; s.textContent = 'Rotulê Aa'; s.style.fontFamily = FONTS['cf_' + it.id] || 'inherit'; b.append(s); }
+    else { const im = document.createElement('img'); im.alt = ''; im.src = gUrl(it); b.append(im); }
+    const t = document.createElement('small'); t.textContent = it.name; const k = document.createElement('i'); k.textContent = KIND_NAME[it.kind]; b.append(t, k); box.append(b);
+  });
+}
+function gSetSub(sub) {
+  G.sub = sub; $$('#gSub button').forEach(b => b.classList.toggle('on', b.dataset.v === sub));
+  $('#gSearch').hidden = sub !== 'buscar'; $('#gMine').hidden = sub !== 'minha'; if (sub === 'minha') renderGallery();
+}
+
+/* ---- folha de detalhes ---- */
+const SH = { res: null, item: null };
+async function fetchBlob(res) { const r = await fetch(res.full); if (!r.ok) throw new Error('HTTP ' + r.status); const b = await r.blob(); return res.mime === 'font/woff2' ? new Blob([b], { type: 'font/woff2' }) : b; }
+function blobToCanvas(blob) {   // rasteriza qualquer imagem (inclusive SVG) sobre fundo branco
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(blob), im = new Image();
+    im.onload = () => {
+      let w = im.naturalWidth || 512, h = im.naturalHeight || 512; const k = Math.min(1600 / Math.max(w, h), 1024 / Math.max(w, h) * (blob.type.includes('svg') ? 2 : 1)); w = Math.max(1, Math.round(w * k)); h = Math.max(1, Math.round(h * k));
+      const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(im, 0, 0, w, h);
+      c.naturalWidth = w; c.naturalHeight = h; URL.revokeObjectURL(u); res(c);
+    };
+    im.onerror = () => rej(new Error('Imagem inválida')); im.src = u;
+  });
+}
+function extOf(blob, res) { const t = (blob && blob.type) || (res && res.mime) || ''; return t.includes('svg') ? 'svg' : t.includes('png') ? 'png' : t.includes('webp') ? 'webp' : t.includes('woff2') ? 'woff2' : 'jpg'; }
+function downloadBlob(blob, name) { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 4000); }
+
+function openSheet(res, item) {
+  SH.res = res; SH.item = item; const saved = !!item, kind = (item || res).kind, title = item ? item.name : res.title;
+  const prev = $('#shPrev'); prev.innerHTML = ''; prev.className = 'sheet-prev' + (kind === 'fonte' ? ' font' : '');
+  if (kind === 'fonte') {
+    const fam = saved ? FONTS['cf_' + item.id] : `"${FONT_PREVIEW[res.fontId] ? 'pv' + res.fontId.replace(/[^a-z0-9]/g, '') : 'inherit'}"`;
+    prev.innerHTML = `<div class="big">Rotulê</div><div class="small">ABCDEFGHIJKLM<br>abcdefghijklm<br>0123456789 ÁÉÍÓÚ Ç Ã Õ</div>`; prev.style.fontFamily = fam;
+  } else { const im = document.createElement('img'); im.alt = ''; im.src = saved ? gUrl(item) : res.thumb; prev.append(im); }
+  $('#shName').value = title; $('#shInfo').textContent = `${KIND_NAME[kind]} · ${(item || res).source} · ${(item || res).credit}`;
+  $('#shSave').hidden = saved; $('#shDel').hidden = !saved; $('#shDl').hidden = false;
+  const u1 = $('#shUse1'), u2 = $('#shUse2');
+  if (kind === 'fonte') { u1.textContent = 'Usar nas letras'; u1.dataset.a = 'font'; u2.hidden = true; }
+  else if (kind === 'foto') { u1.textContent = 'Editar e imprimir'; u1.dataset.a = 'edit'; u2.hidden = true; }
+  else { u1.textContent = 'Usar como desenho pequeno'; u1.dataset.a = 'icon'; u2.hidden = false; u2.textContent = 'Editar e imprimir'; u2.dataset.a = 'edit'; }
+  $('#shWarn').textContent = saved ? '' : 'Confira a licença antes de usar em algo que você venda. O link da fonte fica guardado na galeria.';
+  $('#sheet').hidden = false; document.body.classList.add('noscroll');
+}
+function closeSheet() { $('#sheet').hidden = true; document.body.classList.remove('noscroll'); }
+
+async function saveCurrent() {   // salva o resultado aberto e devolve o item da galeria
+  if (SH.item) return SH.item;
+  const res = SH.res, name = $('#shName').value.trim() || res.title;
+  const blob = await fetchBlob(res);
+  const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), kind: res.kind, name, query: G.q, source: res.source, credit: res.credit, link: res.link, mime: blob.type || res.mime, blob, addedAt: Date.now() };
+  if (it.kind === 'icone' || it.kind === 'desenho') it.mask = await maskFromCanvas(await blobToCanvas(blob));
+  if (it.kind === 'fonte') await registerFont(it);   // confere se a fonte abre antes de guardar
+  await gPut(it); G.items.unshift(it);
+  if (it.kind === 'fonte') rebuildFontUi(); else await registerMask(it);
+  if (it.kind !== 'foto' && it.kind !== 'fonte') buildIconButtons();
+  SH.item = it; $('#shSave').hidden = true; $('#shDel').hidden = false; renderGallery(); return it;
+}
+async function sheetAction(a) {
+  const btns = ['#shSave', '#shDl', '#shUse1', '#shUse2'].map(s => $(s)); btns.forEach(b => b.disabled = true);
+  try {
+    if (a === 'save') { await saveCurrent(); toast('Salvo na galeria ✿'); }
+    else if (a === 'dl') {
+      const it = SH.item, blob = it ? it.blob : await fetchBlob(SH.res), nm = $('#shName').value.trim() || (it ? it.name : SH.res.title);
+      downloadBlob(blob, `${slug(nm)}.${extOf(blob, it || SH.res)}`); toast('Download iniciado');
+    } else if (a === 'font') { const it = await saveCurrent(); S.font = 'cf_' + it.id; saveSettings(); closeSheet(); syncControls(); scheduleGrid(); setTab('criar'); toast('Fonte aplicada ✿'); }
+    else if (a === 'icon') { const it = await saveCurrent(); S.icon = 'g:' + it.id; saveSettings(); closeSheet(); syncControls(); scheduleGrid(); setTab('criar'); toast('Desenho aplicado ✿'); }
+    else if (a === 'edit') {
+      const blob = SH.item ? SH.item.blob : await fetchBlob(SH.res), cv = await blobToCanvas(blob), nm = $('#shName').value.trim() || (SH.item ? SH.item.name : SH.res.title);
+      closeSheet(); edOpenCanvases([{ name: nm, canvas: cv }]); setTab('imagem');
+    }
+  } catch (e) { toast(e.message === 'Imagem inválida' ? 'Essa imagem não abriu.' : 'Não consegui baixar agora (internet ou bloqueio do site).'); }
+  finally { btns.forEach(b => b.disabled = false); }
+}
+
+function bindGallery() {
+  $('#gSub').addEventListener('click', e => { const b = e.target.closest('button'); if (b) gSetSub(b.dataset.v); });
+  $('#gKinds').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return; G.kind = b.dataset.v; $$('#gKinds button').forEach(x => x.classList.toggle('on', x === b));
+    G.results = []; renderResults(); if ($('#gQuery').value.trim()) doSearch(false); else gStatus('Digite o nome do que você procura.');
+  });
+  $('#gForm').addEventListener('submit', e => { e.preventDefault(); $('#gQuery').blur(); doSearch(false); });
+  $('#gMore').addEventListener('click', () => doSearch(true));
+  $('#gResults').addEventListener('click', e => { const b = e.target.closest('.g-card'); if (b) openSheet(G.results[+b.dataset.i], null); });
+  $('#gItems').addEventListener('click', e => { const b = e.target.closest('.g-card'); if (!b) return; const it = G.items.find(i => i.id === b.dataset.id); if (it) openSheet(null, it); });
+  $('#gCats').addEventListener('click', e => { const b = e.target.closest('button'); if (!b) return; G.filter = b.dataset.v; renderGallery(); });
+  $('#gFilterQ').addEventListener('input', e => { G.fq = e.target.value; renderGallery(); });
+  $('#shClose').addEventListener('click', closeSheet);
+  $('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeSheet(); });
+  $('#shSave').addEventListener('click', () => sheetAction('save'));
+  $('#shDl').addEventListener('click', () => sheetAction('dl'));
+  $('#shUse1').addEventListener('click', e => sheetAction(e.currentTarget.dataset.a));
+  $('#shUse2').addEventListener('click', e => sheetAction(e.currentTarget.dataset.a));
+  $('#shName').addEventListener('change', async () => {   // renomear item já salvo
+    const it = SH.item, v = $('#shName').value.trim(); if (!it || !v) return;
+    it.name = v; await gPut(it); CF['cf_' + it.id] && (CF['cf_' + it.id] = v, rebuildFontUi());
+    const ic = ICONS.find(i => i[0] === 'g:' + it.id); if (ic) { ic[1] = v; buildIconButtons(); syncControls(); }
+    renderGallery(); toast('Nome atualizado');
+  });
+  $('#shDel').addEventListener('click', async () => {
+    const it = SH.item; if (!it || !confirm(`Excluir “${it.name}” da galeria?`)) return;
+    await gDel(it.id); G.items = G.items.filter(i => i.id !== it.id); G.urls.delete(it.id);
+    const ix = ICONS.findIndex(i => i[0] === 'g:' + it.id); if (ix >= 0) ICONS.splice(ix, 1); delete GMASK[it.id];
+    if (S.icon === 'g:' + it.id) S.icon = 'none'; delete CF['cf_' + it.id]; if (S.font === 'cf_' + it.id) S.font = 'sans';
+    saveSettings(); rebuildFontUi(); buildIconButtons(); syncControls(); renderGallery(); scheduleGrid(); closeSheet(); toast('Excluído');
+  });
+  DB_READY = dbOpen().then(d => { DB.db = d; return loadGallery(); });
+}
+let DB_READY = null;
+
 function init() {
   if (!navigator.bluetooth) {
     const b = $('#compat'); b.hidden = false;
     b.textContent = 'Este navegador não suporta Bluetooth na web (iPhone/Safari não suporta). Use o Chrome no Android ou no computador para imprimir. Você ainda pode criar as etiquetas e baixar o PNG.';
   }
-  buildShapeButtons(); buildIconButtons(); buildCategoryPills(); syncControls(); bind(); bindEditor();
+  buildShapeButtons(); buildIconButtons(); buildCategoryPills(); syncControls(); bind(); bindEditor(); bindGallery();
   loadFonts().then(() => { renderGrid(); renderLive(); if ($('#tab-fila').classList.contains('active')) renderQueue(); if (edCur()) edDraw(); });
   queue.forEach(q => q.img && getImg(q.img));
   renderGrid(); renderLive(); updateBadge(); updateSelBar(); setBtUi('off');
