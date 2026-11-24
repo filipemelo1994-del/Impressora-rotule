@@ -1,4 +1,4 @@
-const CACHE = 'rotule-v5';
+const CACHE = 'rotule-v8';
 const ASSETS = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png'];
 
 self.addEventListener('install', e => {

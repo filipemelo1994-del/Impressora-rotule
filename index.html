@@ -232,6 +232,25 @@ input[type=text]{margin-top:10px}
     </div>
 
     <div class="card">
+      <h2>Importar imagem</h2>
+      <p class="hint">Escolha uma ou várias imagens (PNG, JPG…) da galeria. Elas viram preto e branco no tamanho do papel e vão para a fila.</p>
+      <input type="file" id="fileImg" accept="image/*" multiple hidden>
+      <button id="btnPickImg" class="btn primary" type="button" style="width:100%">🖼️ Escolher imagem(ns)</button>
+      <div id="importBox" hidden>
+        <p class="hint" id="impInfo"></p>
+        <div class="preview-wrap"><canvas id="impPreview" aria-label="Prévia da imagem em preto e branco"></canvas></div>
+        <label class="field">Limiar (mais alto = mais preto) <b id="impThrOut"></b>
+          <input type="range" id="impThr" min="40" max="220" step="5" value="150">
+        </label>
+        <label class="switch"><input type="checkbox" id="impDither"><span>Pontilhado (para fotos e imagens com sombra)</span></label>
+        <div class="row two">
+          <button id="btnImpCancel" class="btn" type="button">Cancelar</button>
+          <button id="btnImpAdd" class="btn primary" type="button">Adicionar à fila</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
       <h2>Modelos prontos</h2>
       <p class="hint">Toque nas etiquetas para selecionar várias de uma vez.</p>
       <div class="pills scroll" id="catPills" role="tablist"></div>
@@ -315,6 +334,9 @@ input[type=text]{margin-top:10px}
         </label>
         <label class="field">Densidade (escuridão) <b id="densOut"></b>
           <input type="range" id="optDens" min="1" max="15" step="1">
+        </label>
+        <label class="field">Nitidez do preto (letras brancas sumindo? aumente)
+          <select id="optErode"><option value="0">Normal</option><option value="1">Média (recomendado)</option><option value="2">Forte</option></select>
         </label>
         <label class="switch"><input type="checkbox" id="optInv"><span>Inverter preto/branco (se sair tudo preto ou apagado)</span></label>
         <p class="hint">Cada figurinha sai numa etiqueta do papel, centralizada. Se ela for maior que o papel, é reduzida para caber.</p>
@@ -417,12 +439,13 @@ const PRESETS = {
 const CATS = ['Temperos', 'Mantimentos', 'Despensa', 'Magia', 'Casa', 'Meus'];
 
 const PAPERS = [[40, 20], [40, 30], [50, 30], [50, 40], [58, 40]];   // mesmos tamanhos do app das fichas
-const DEFAULTS = { v:3, shape:'pill', style:'solid', orn:'floreio', icon:'none', iconPos:'left', font:'sans', upper:true, bold:true, wmm:36, hmm:16, feed:3, ff:false, chunk:20, delay:12,
-  proto:'tspl', pw:40, ph:30, gap:2, dens:8, inv:false };
+const DEFAULTS = { v:4, shape:'pill', style:'solid', orn:'floreio', icon:'none', iconPos:'left', font:'sans', upper:true, bold:true, wmm:36, hmm:16, feed:3, ff:false, chunk:20, delay:12,
+  proto:'tspl', pw:40, ph:30, gap:2, dens:6, inv:false, erode:1 };
 const savedSettings = store.get('rotule.settings', {});
 let S = Object.assign({}, DEFAULTS, savedSettings);
 // v2: pacotes de 20 bytes (limite seguro do BLE no Android); v3: protocolo TSPL (o que a POS-5820 entende)
-if (!savedSettings.v || savedSettings.v < 3) { S.v = 3; S.chunk = 20; S.delay = 12; S.proto = 'tspl'; store.set('rotule.settings', S); }
+if (!savedSettings.v || savedSettings.v < 3) { S.chunk = 20; S.delay = 12; S.proto = 'tspl'; }
+if (!savedSettings.v || savedSettings.v < 4) { S.v = 4; S.dens = 6; S.erode = 1; store.set('rotule.settings', S); }
 let queue = store.get('rotule.queue', []);
 let mine  = store.get('rotule.mine', []);
 let category = 'Temperos';
@@ -839,7 +862,21 @@ function fitLines(ctx, text, maxW, maxH, family, weight) {
   return best;
 }
 
+const IMGCACHE = {};
+function getImg(src) {
+  let e = IMGCACHE[src];
+  if (!e) { e = IMGCACHE[src] = new Image(); e.onload = () => { e.ok = true; try { renderQueue(); } catch (_) {} }; e.src = src; }
+  return e;
+}
 function drawLabel(ctx, x, y, w, h, item, o) {
+  if (item.img) {   // imagem importada: cabe inteira dentro da etiqueta
+    const im = getImg(item.img);
+    if (im.ok) {
+      const k = Math.min(w / im.naturalWidth, h / im.naturalHeight), dw = im.naturalWidth * k, dh = im.naturalHeight * k;
+      ctx.drawImage(im, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+    }
+    return;
+  }
   ctx.save(); ctx.translate(x, y);
   const m = 2, r = { x: m, y: m, w: w - 2 * m, h: h - 2 * m };
   const solid = o.style === 'solid', fg = solid ? '#fff' : '#000';
@@ -969,16 +1006,36 @@ function tsplJob(items) {
   const parts = [enc.encode(`SIZE ${S.pw} mm,${S.ph} mm\r\nGAP ${S.gap} mm,0 mm\r\nDIRECTION 1\r\nDENSITY ${S.dens}\r\n`)];
   const flat = []; items.forEach(it => { for (let i = 0; i < it.qty; i++) flat.push(it); });
   flat.forEach(it => {
-    const lab = document.createElement('canvas'); lab.width = w; lab.height = h;
-    const lc = lab.getContext('2d'); lc.fillStyle = '#fff'; lc.fillRect(0, 0, w, h);
-    drawLabel(lc, 0, 0, w, h, it, it.look || lookOf(S));
     const pg = document.createElement('canvas'); pg.width = Wp; pg.height = Hp;
     const pc = pg.getContext('2d'); pc.fillStyle = '#fff'; pc.fillRect(0, 0, Wp, Hp);
-    const sc = Math.min(1, (Wp - 8) / w, (Hp - 8) / h), dw = w * sc, dh = h * sc;
-    pc.imageSmoothingQuality = 'high'; pc.drawImage(lab, (Wp - dw) / 2, (Hp - dh) / 2, dw, dh);
+    if (it.img) {   // imagem importada já é preto e branco, no tamanho do papel
+      const im = getImg(it.img);
+      if (im.ok) {
+        const k = Math.min(Wp / im.naturalWidth, Hp / im.naturalHeight), dw = Math.round(im.naturalWidth * k), dh = Math.round(im.naturalHeight * k);
+        pc.imageSmoothingEnabled = k < 1; pc.drawImage(im, Math.floor((Wp - dw) / 2), Math.floor((Hp - dh) / 2), dw, dh);
+      }
+    } else {
+      const lab = document.createElement('canvas'); lab.width = w; lab.height = h;
+      const lc = lab.getContext('2d'); lc.fillStyle = '#fff'; lc.fillRect(0, 0, w, h);
+      drawLabel(lc, 0, 0, w, h, it, it.look || lookOf(S));
+      const sc = Math.min(1, (Wp - 8) / w, (Hp - 8) / h), dw = w * sc, dh = h * sc;
+      pc.imageSmoothingQuality = 'high'; pc.drawImage(lab, (Wp - dw) / 2, (Hp - dh) / 2, dw, dh);
+    }
     const px = pc.getImageData(0, 0, Wp, Hp).data, bmp = new Uint8Array(wb * Hp);
+    let mask = new Uint8Array(Wp * Hp);
+    for (let i = 0; i < mask.length; i++) mask[i] = px[i * 4] < 150 ? 1 : 0;
+    // A cabeça térmica "borra" o preto: encolhe as áreas pretas para as letras/desenhos brancos não fecharem
+    for (let n = 0; n < (it.img ? 0 : (S.erode || 0)); n++) {
+      const nm = new Uint8Array(mask.length);
+      for (let y = 0; y < Hp; y++) for (let x = 0; x < Wp; x++) {
+        const i = y * Wp + x;
+        if (!mask[i]) continue;
+        nm[i] = (x > 0 && y > 0 && x < Wp - 1 && y < Hp - 1 && mask[i - 1] && mask[i + 1] && mask[i - Wp] && mask[i + Wp]) ? 1 : 0;
+      }
+      mask = nm;
+    }
     for (let y = 0; y < Hp; y++) for (let x = 0; x < Wp; x++) {
-      const black = px[(y * Wp + x) * 4] < 150;
+      const black = mask[y * Wp + x] === 1;
       const bit = S.inv ? (black ? 1 : 0) : (black ? 0 : 1);
       if (bit) bmp[y * wb + (x >> 3)] |= 0x80 >> (x & 7);
     }
@@ -997,8 +1054,13 @@ function buildJob(items) {
 }
 
 /* --------------------------------------------------------------- Bluetooth */
-const BT_SERVICES = [0xFFE0, 0xFF00, 0xFFF0, 0xFEE7, 0xAE30, 0xAF30, 0x18F0, 0xFFB0, 0x1101,
-  'e7810a71-73ae-499d-8c15-faa9aef0c3f2', '49535343-fe7d-4ae5-8fa9-9fafd205e455', '0000ff00-0000-1000-8000-00805f9b34fb'];
+// Mesma lista do app das fichas (que já imprime na POS-5820)
+const BT_SERVICES = ['000018f0-0000-1000-8000-00805f9b34fb', '0000ff00-0000-1000-8000-00805f9b34fb', '0000ffe0-0000-1000-8000-00805f9b34fb',
+  '0000fff0-0000-1000-8000-00805f9b34fb', '0000fee7-0000-1000-8000-00805f9b34fb', '0000ae00-0000-1000-8000-00805f9b34fb',
+  '0000af30-0000-1000-8000-00805f9b34fb', '0000ffb0-0000-1000-8000-00805f9b34fb', '0000ffc0-0000-1000-8000-00805f9b34fb',
+  '0000ffd0-0000-1000-8000-00805f9b34fb', '0000fe00-0000-1000-8000-00805f9b34fb', '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+  'e7810a71-73ae-499d-8c15-faa9aef0c3f2', 'bef8d6c9-9c21-4c9e-b632-bd58c1009f9f', '6e400001-b5a3-f393-b0a9-e50e24dcca9e',
+  '0000ae30-0000-1000-8000-00805f9b34fb'];
 const BT = { device: null, char: null, chars: [], name: '' };
 const KNOWN_CHARS = ['ff02', 'ffe1', '2af1', 'ae01', 'ff01', 'fff2', 'fff1', 'bef8d6c9'];
 const shortId = u => /^0000[0-9a-f]{4}-0000-1000-8000-00805f9b34fb$/.test(u) ? u.slice(4, 8) : u.slice(0, 8);
@@ -1026,11 +1088,10 @@ async function attach(device) {
     try { chars = await sv.getCharacteristics(); } catch { continue; }
     for (const c of chars) {
       if (!(c.properties.writeWithoutResponse || c.properties.write)) continue;
-      const k = KNOWN_CHARS.indexOf(shortId(c.uuid));
-      found.push({ c, score: (k >= 0 ? 20 - k : 0) + (c.properties.writeWithoutResponse ? 1 : 0), label: `${shortId(sv.uuid)} / ${shortId(c.uuid)}${c.properties.writeWithoutResponse ? '' : ' (com resposta)'}` });
+      // mesma regra do app das fichas: vale o 1º canal gravável na ordem em que a impressora os lista
+      found.push({ c, score: 0, label: `${shortId(sv.uuid)} / ${shortId(c.uuid)}${c.properties.writeWithoutResponse ? '' : ' (com resposta)'}` });
     }
   }
-  found.sort((a, b) => b.score - a.score);
   BT.chars = found; BT.char = found.length ? found[0].c : null;
   if (!BT.char) { try { device.gatt.disconnect(); } catch {} throw new Error('Não achei um canal de escrita nessa impressora. Ela pode ser só Bluetooth clássico (sem BLE).'); }
   const sel = $('#optChar'); sel.innerHTML = '';
@@ -1093,6 +1154,52 @@ function addToQueue(text, sub, qty) {
   saveQueue(); return true;
 }
 
+/* ------------------------------------------------------------ importar imagem */
+let importFiles = [], importImgs = [];
+function importTarget() {
+  if (S.proto === 'tspl') return [Math.round(S.pw * DPMM), Math.round(S.ph * DPMM)];
+  const d = dims(); return [d.w, d.h];
+}
+// Converte qualquer imagem em preto e branco (limiar ou pontilhado) no tamanho do papel
+function processImage(im, thr, dither) {
+  const [W, H] = importTarget();
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const c = cv.getContext('2d', { willReadFrequently: true });
+  c.fillStyle = '#fff'; c.fillRect(0, 0, W, H);
+  const k = Math.min(W / im.naturalWidth, H / im.naturalHeight), dw = Math.round(im.naturalWidth * k), dh = Math.round(im.naturalHeight * k);
+  c.imageSmoothingQuality = 'high'; c.drawImage(im, Math.floor((W - dw) / 2), Math.floor((H - dh) / 2), dw, dh);
+  const d = c.getImageData(0, 0, W, H), p = d.data, g = new Float32Array(W * H);
+  for (let i = 0; i < g.length; i++) {
+    const a = p[i * 4 + 3] / 255;   // transparência vira branco
+    g[i] = (0.299 * p[i * 4] + 0.587 * p[i * 4 + 1] + 0.114 * p[i * 4 + 2]) * a + 255 * (1 - a);
+  }
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const i = y * W + x, old = g[i], nw = old < thr ? 0 : 255;
+    if (dither) {
+      const e = old - nw;
+      if (x + 1 < W) g[i + 1] += e * 7 / 16;
+      if (y + 1 < H) { if (x > 0) g[i + W - 1] += e * 3 / 16; g[i + W] += e * 5 / 16; if (x + 1 < W) g[i + W + 1] += e / 16; }
+    }
+    p[i * 4] = p[i * 4 + 1] = p[i * 4 + 2] = nw; p[i * 4 + 3] = 255;
+  }
+  c.putImageData(d, 0, 0);
+  return cv;
+}
+function renderImportPreview() {
+  const box = $('#importBox'); box.hidden = importImgs.length === 0;
+  if (!importImgs.length) return;
+  const cv = processImage(importImgs[0], +$('#impThr').value, $('#impDither').checked);
+  const pv = $('#impPreview'); pv.width = cv.width; pv.height = cv.height; pv.getContext('2d').drawImage(cv, 0, 0);
+  $('#impThrOut').textContent = $('#impThr').value;
+  $('#impInfo').textContent = importImgs.length > 1 ? `${importImgs.length} imagens (prévia da primeira)` : importFiles[0].name;
+}
+function loadFileImage(f) {
+  return new Promise((res, rej) => {
+    const u = URL.createObjectURL(f), im = new Image();
+    im.onload = () => { res(im); }; im.onerror = () => rej(new Error('Não consegui abrir ' + f.name)); im.src = u;
+  });
+}
+
 function setTab(name) {
   $$('.tab').forEach(t => t.classList.toggle('active', t.id === 'tab-' + name));
   $$('.tabbar button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
@@ -1129,7 +1236,7 @@ function syncPrinterUi() {
   sel.value = known ? `${S.pw}x${S.ph}` : 'custom';
   $('#paperCustom').hidden = known;
   $('#optPW').value = S.pw; $('#optPH').value = S.ph; $('#optGap').value = S.gap;
-  $('#optDens').value = S.dens; $('#densOut').textContent = S.dens; $('#optInv').checked = S.inv;
+  $('#optDens').value = S.dens; $('#densOut').textContent = S.dens; $('#optInv').checked = S.inv; $('#optErode').value = String(S.erode);
 }
 
 function buildShapeButtons() {
@@ -1233,6 +1340,7 @@ async function doPrint(items, label) {
   try {
     setStatus('Conectando à impressora…');
     await btEnsure();
+    await Promise.all(items.filter(i => i.img).map(i => { const e = getImg(i.img); return e.ok ? 0 : new Promise(r => { e.addEventListener('load', r); e.addEventListener('error', r); }); }));
     const data = buildJob(items);
     setStatus(`Enviando ${label}…`); setProgress(0);
     await btSend(data, setProgress);
@@ -1273,6 +1381,25 @@ function bind() {
   $('#txtSub').addEventListener('input', renderLive);
   $('#txtMain').addEventListener('keydown', e => { if (e.key === 'Enter') $('#btnAddCustom').click(); });
 
+  $('#btnPickImg').addEventListener('click', () => $('#fileImg').click());
+  $('#fileImg').addEventListener('change', async e => {
+    const files = [...e.target.files]; e.target.value = ''; if (!files.length) return;
+    try {
+      importImgs = await Promise.all(files.map(loadFileImage)); importFiles = files; renderImportPreview();
+    } catch (err) { toast(err.message); }
+  });
+  $('#impThr').addEventListener('input', renderImportPreview);
+  $('#impDither').addEventListener('change', renderImportPreview);
+  $('#btnImpCancel').addEventListener('click', () => { importImgs = []; importFiles = []; renderImportPreview(); });
+  $('#btnImpAdd').addEventListener('click', () => {
+    const thr = +$('#impThr').value, dith = $('#impDither').checked, qty = 1;
+    importImgs.forEach((im, i) => {
+      const url = processImage(im, thr, dith).toDataURL('image/png');
+      queue.push({ id: uid(), text: importFiles[i].name.replace(/\.[^.]+$/, ''), sub: 'Imagem', qty, img: url, look: lookOf(S) });
+    });
+    saveQueue(); toast(`${importImgs.length} imagem(ns) na fila`);
+    importImgs = []; importFiles = []; renderImportPreview(); setTab('fila'); renderQueue();
+  });
   $('#btnAddCustom').addEventListener('click', () => {
     const t = $('#txtMain').value;
     if (!t.trim()) { toast('Digite um texto primeiro'); $('#txtMain').focus(); return; }
@@ -1337,6 +1464,7 @@ function bind() {
   $('#optPH').addEventListener('change', () => { S.ph = Math.round(num($('#optPH'), 10, 200, 30)); saveSettings(); syncPrinterUi(); $('#paperCustom').hidden = false; });
   $('#optGap').addEventListener('change', () => { S.gap = num($('#optGap'), 0, 10, 2); saveSettings(); syncPrinterUi(); });
   $('#optDens').addEventListener('input', e => { S.dens = +e.target.value; $('#densOut').textContent = S.dens; saveSettings(); });
+  $('#optErode').addEventListener('change', e => { S.erode = +e.target.value; saveSettings(); });
   $('#optInv').addEventListener('change', e => { S.inv = e.target.checked; saveSettings(); });
   $('#optChar').addEventListener('change', e => { const f = BT.chars[+e.target.value]; if (f) { BT.char = f.c; toast('Canal trocado'); } });
   $('#btnTextTest').addEventListener('click', async () => {
@@ -1374,6 +1502,7 @@ function init() {
   }
   buildShapeButtons(); buildIconButtons(); buildCategoryPills(); syncControls(); bind();
   loadFonts().then(() => { renderGrid(); renderLive(); if ($('#tab-fila').classList.contains('active')) renderQueue(); });
+  queue.forEach(q => q.img && getImg(q.img));
   renderGrid(); renderLive(); updateBadge(); updateSelBar(); setBtUi('off');
   if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(() => {});
 }
